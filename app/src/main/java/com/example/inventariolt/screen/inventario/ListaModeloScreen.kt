@@ -23,11 +23,14 @@ import com.example.inventariolt.ui.theme.*
 import com.example.inventariolt.model.inventario.ModeloResponseDTO
 import com.example.inventariolt.viewModel.ModeloListState
 import com.example.inventariolt.viewModel.ModeloViewModel
+import com.example.inventariolt.viewModel.UsuarioViewModel
+import com.example.inventariolt.viewModel.PerfilState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListaModelosScreen(
     navController: NavController,
+    userId: Long,
     viewModel: ModeloViewModel = viewModel()
 ) {
     val state by viewModel.modelosState.collectAsState()

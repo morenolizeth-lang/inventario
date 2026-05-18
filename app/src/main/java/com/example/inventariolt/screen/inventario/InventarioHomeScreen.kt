@@ -54,13 +54,25 @@ fun InventarioHomeScreen(
     // Cargar perfil y productos
     LaunchedEffect(userId) {
         viewModel.cargarPerfil(userId)
-        viewModel.cargarProductos()
+    }
+
+    // Cargar productos cuando el perfil está listo
+    LaunchedEffect(perfilState) {
+        if (perfilState is PerfilState.Success) {
+            val tiendaId = (perfilState as PerfilState.Success).usuario.tiendaId
+            if (tiendaId != null) {
+                viewModel.cargarProductos(tiendaId)
+            }
+        }
     }
 
     // Recargar productos cuando la pantalla obtiene foco (después de agregar un producto)
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.cargarProductos()
+            val state = viewModel.perfilState.value
+            if (state is PerfilState.Success) {
+                state.usuario.tiendaId?.let { viewModel.cargarProductos(it) }
+            }
         }
     }
 
@@ -250,11 +262,12 @@ fun InventarioHomeScreen(
                     onClick = {
                         scope.launch {
                             drawerState.close()
-                            navController.navigate("lista_variantes")
+                            navController.navigate("lista_variantes/$userId")
                         }
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
-                )// En InventarioHomeScreen, dentro del ModalDrawerSheet, después de NavigationDrawerItem de Variantes
+                )
+
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Inventory2, contentDescription = "Modelos") },
                     label = { Text("Modelos", fontWeight = FontWeight.Medium) },
@@ -262,7 +275,7 @@ fun InventarioHomeScreen(
                     onClick = {
                         scope.launch {
                             drawerState.close()
-                            navController.navigate("lista_modelos")
+                            navController.navigate("lista_modelos/$userId")
                         }
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -547,10 +560,17 @@ fun InventarioHomeScreen(
                                     fontSize = 16.sp,
                                     color = Color.Red
                                 )
-                                Button(
-                                    onClick = { viewModel.cargarProductos() },
-                                    modifier = Modifier.padding(top = 16.dp)
-                                ) {
+                                    Button(
+                                        onClick = {
+                                            val state = viewModel.perfilState.value
+                                            if (state is PerfilState.Success) {
+                                                state.usuario.tiendaId?.let { viewModel.cargarProductos(it) }
+                                            } else {
+                                                viewModel.cargarProductos()
+                                            }
+                                        },
+                                        modifier = Modifier.padding(top = 16.dp)
+                                    ) {
                                     Text("Reintentar")
                                 }
                             }
@@ -599,7 +619,7 @@ fun ProductCard(
                         model = product.imagen,
                         contentDescription = product.modeloNombre,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Fit,
                         loading = {
                             Box(contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp))

@@ -51,6 +51,8 @@ fun ActualizarPerfilScreen(
     viewModel: UsuarioViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE) }
+    val currentSavedPassword = remember { prefs.getString("user_password", "") ?: "" }
     val perfilState by viewModel.perfilState.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
 
@@ -60,7 +62,8 @@ fun ActualizarPerfilScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
-    var cambiarPassword by remember { mutableStateOf(false) } // Nuevo estado
+    var cambiarPassword by remember { mutableStateOf(false) }
+    var imageUri by remember { mutableStateOf<Uri?>(null) } // Nuevo estado para la imagen seleccionada
 
     // Cargar datos iniciales
     LaunchedEffect(userId) {
@@ -81,6 +84,10 @@ fun ActualizarPerfilScreen(
         when (updateState) {
             is UpdatePerfilState.Success -> {
                 Toast.makeText(context, "Perfil actualizado con éxito", Toast.LENGTH_SHORT).show()
+                // Actualizar contraseña guardada si se cambió
+                if (cambiarPassword && password.isNotEmpty()) {
+                    prefs.edit().putString("user_password", password).apply()
+                }
                 viewModel.resetUpdateState()
                 navController.popBackStack()
             }
@@ -102,12 +109,7 @@ fun ActualizarPerfilScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            val file = uriToFile(context, it)
-            if (file != null) {
-                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-                val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-                viewModel.subirFotoPerfil(userId, body)
-            }
+            imageUri = it // Solo guardamos la URI localmente
         }
     }
 
@@ -170,7 +172,15 @@ fun ActualizarPerfilScreen(
                                     color = Color.White,
                                     shadowElevation = 8.dp
                                 ) {
-                                    if (usuario.fotoPerfil == null) {
+                                    if (imageUri != null) {
+                                        // Mostrar la imagen seleccionada localmente si existe
+                                        SubcomposeAsyncImage(
+                                            model = imageUri,
+                                            contentDescription = "Nueva foto de perfil",
+                                            modifier = Modifier.clip(CircleShape),
+                                            contentScale = ContentScale.Fit
+                                        )
+                                    } else if (usuario.fotoPerfil == null) {
                                         Icon(
                                             Icons.Default.Person,
                                             contentDescription = null,
@@ -180,9 +190,9 @@ fun ActualizarPerfilScreen(
                                     } else {
                                         SubcomposeAsyncImage(
                                             model = usuario.fotoPerfil,
-                                            contentDescription = "Foto de perfil",
+                                            contentDescription = "Foto de perfil actual",
                                             modifier = Modifier.clip(CircleShape),
-                                            contentScale = ContentScale.Crop
+                                            contentScale = ContentScale.Fit
                                         )
                                     }
                                 }
@@ -357,15 +367,31 @@ fun ActualizarPerfilScreen(
 
                             Button(
                                 onClick = {
+                                    val finalPassword = if (cambiarPassword && password.isNotEmpty()) {
+                                        password
+                                    } else {
+                                        currentSavedPassword
+                                    }
+
                                     val request = UsuarioRequestDTO(
-                                        nombre = nombre,
-                                        correo = correo,
-                                        password = if (cambiarPassword) password else "", // Si no cambia contraseña, enviar vacío o null
+                                        nombre = nombre.trim(),
+                                        correo = correo.trim(),
+                                        password = finalPassword,
                                         rol = usuario.rol,
                                         estado = usuario.estado,
                                         tiendaId = usuario.tiendaId
                                     )
-                                    viewModel.actualizarPerfil(userId, request)
+
+                                    var body: MultipartBody.Part? = null
+                                    imageUri?.let { uri ->
+                                        val file = com.example.inventariolt.utils.FileUtils.uriToFile(context, uri)
+                                        file?.let {
+                                            val requestFile = it.asRequestBody("image/*".toMediaTypeOrNull())
+                                            body = MultipartBody.Part.createFormData("file", it.name, requestFile)
+                                        }
+                                    }
+
+                                    viewModel.actualizarPerfilCompleto(userId, request, body)
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -402,37 +428,4 @@ fun ActualizarPerfilScreen(
             }
         }
     }
-}
-
-// Función auxiliar para convertir Uri a File (necesaria para Multipart)
-fun uriToFile(context: android.content.Context, uri: Uri): File? {
-    val contentResolver = context.contentResolver
-    val fileName = getFileName(context, uri)
-    val tempFile = File(context.cacheDir, fileName)
-
-    try {
-        contentResolver.openInputStream(uri)?.use { inputStream ->
-            FileOutputStream(tempFile).use { outputStream ->
-                inputStream.copyTo(outputStream)
-            }
-        }
-        return tempFile
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return null
-    }
-}
-
-fun getFileName(context: android.content.Context, uri: Uri): String {
-    var name = "temp_image"
-    val cursor = context.contentResolver.query(uri, null, null, null, null)
-    cursor?.use {
-        if (it.moveToFirst()) {
-            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (nameIndex != -1) {
-                name = it.getString(nameIndex)
-            }
-        }
-    }
-    return name
 }

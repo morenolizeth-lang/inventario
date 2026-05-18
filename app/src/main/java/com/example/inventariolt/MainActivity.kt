@@ -114,8 +114,12 @@ fun AppNavigation() {
         }
 
         // Pantalla de Lista de Variantes
-        composable("lista_variantes") {
-            com.example.inventariolt.screen.inventario.ListaVariantesScreen(navController = navController)
+        composable(
+            route = "lista_variantes/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+            com.example.inventariolt.screen.inventario.ListaVariantesScreen(navController = navController, userId = userId)
         }
 
         // Pantalla de Detalle de Variante
@@ -172,8 +176,12 @@ fun AppNavigation() {
             CrearModeloScreen(navController = navController)
         }
         // Pantalla de Lista de Modelos ✅ NUEVA RUTA
-        composable("lista_modelos") {
-            ListaModelosScreen(navController = navController)
+        composable(
+            route = "lista_modelos/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+            ListaModelosScreen(navController = navController, userId = userId)
         }
         composable(
             route = "editar_modelo/{modeloId}",

@@ -35,8 +35,11 @@ import com.example.inventariolt.viewModel.EstadisticasData
 import com.example.inventariolt.viewModel.EstadisticasState
 import com.example.inventariolt.viewModel.EstadisticasViewModel
 import com.example.inventariolt.viewModel.TipoGrafico
+import com.example.inventariolt.viewModel.UsuarioViewModel
+import com.example.inventariolt.viewModel.PerfilState
 import com.example.inventariolt.ui.theme.*
 import java.time.Month
+import androidx.compose.runtime.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,11 +51,18 @@ fun EstadisticasScreen(
     val estadisticasState by viewModel.estadisticasState.collectAsState()
     val filtros by viewModel.filtrosState.collectAsState()
 
-    var mostrarFiltros by remember { mutableStateOf(false) }
-    var tipoGraficoTemp by remember { mutableStateOf(filtros.tipoGrafico) }
+    val usuarioViewModel: UsuarioViewModel = viewModel()
+    val perfilState by usuarioViewModel.perfilState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.cargarDatos()
+    LaunchedEffect(userId) {
+        usuarioViewModel.cargarPerfil(userId)
+    }
+
+    LaunchedEffect(perfilState) {
+        if (perfilState is PerfilState.Success) {
+            val tiendaId = (perfilState as PerfilState.Success).usuario.tiendaId
+            viewModel.cargarDatos(tiendaId)
+        }
     }
 
     Scaffold(
@@ -65,14 +75,11 @@ fun EstadisticasScreen(
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-                    }
-                    IconButton(onClick = { mostrarFiltros = !mostrarFiltros }) {
-                        Icon(Icons.Default.FilterList, contentDescription = "Filtros", tint = Color.White)
                     }
                 }
             }
@@ -97,61 +104,6 @@ fun EstadisticasScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (mostrarFiltros) {
-                            Card(
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text("Filtros", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AquamarineDark)
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Text("Tipo de gráfico", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        FilterChip(
-                                            selected = tipoGraficoTemp == TipoGrafico.BARRAS,
-                                            onClick = { tipoGraficoTemp = TipoGrafico.BARRAS },
-                                            label = { Text("Barras") },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = AquamarinePrimary,
-                                                selectedLabelColor = Color.White
-                                            )
-                                        )
-                                        FilterChip(
-                                            selected = tipoGraficoTemp == TipoGrafico.LINEAS,
-                                            onClick = { tipoGraficoTemp = TipoGrafico.LINEAS },
-                                            label = { Text("Líneas") },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = AquamarinePrimary,
-                                                selectedLabelColor = Color.White
-                                            )
-                                        )
-                                        FilterChip(
-                                            selected = tipoGraficoTemp == TipoGrafico.TORTA,
-                                            onClick = { tipoGraficoTemp = TipoGrafico.TORTA },
-                                            label = { Text("Torta") },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = AquamarinePrimary,
-                                                selectedLabelColor = Color.White
-                                            )
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Button(
-                                        onClick = {
-                                            viewModel.actualizarFiltros(tipoGrafico = tipoGraficoTemp)
-                                            mostrarFiltros = false
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = AquamarinePrimary)
-                                    ) { Text("Aplicar") }
-                                }
-                            }
-                        }
-
                         ResumenCard(data)
                         AlertasCard(data)
                         GraficoCard(data, filtros.tipoGrafico)
@@ -167,7 +119,14 @@ fun EstadisticasScreen(
                         Icon(Icons.Default.Error, contentDescription = null, tint = Color.Red, modifier = Modifier.size(64.dp))
                         Spacer(modifier = Modifier.height(16.dp))
                         Text((estadisticasState as EstadisticasState.Error).message, textAlign = TextAlign.Center)
-                        Button(onClick = { viewModel.cargarDatos() }, modifier = Modifier.padding(top = 16.dp)) { Text("Reintentar") }
+                        Button(onClick = {
+                            val state = usuarioViewModel.perfilState.value
+                            if (state is PerfilState.Success) {
+                                viewModel.cargarDatos(state.usuario.tiendaId)
+                            } else {
+                                viewModel.cargarDatos()
+                            }
+                        }, modifier = Modifier.padding(top = 16.dp)) { Text("Reintentar") }
                     }
                 }
                 else -> {}
@@ -305,10 +264,10 @@ fun DistribucionStockCard(data: EstadisticasData) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Distribución de Stock", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AquamarineDark)
             Spacer(modifier = Modifier.height(12.dp))
-            StockBar("Stock Alto (>20)", data.stockAlto, data.totalProductos, Color(0xFF4CAF50))
-            StockBar("Stock Normal (6-20)", data.stockNormal, data.totalProductos, Color(0xFF2196F3))
-            StockBar("Stock Bajo (1-5)", data.stockBajo, data.totalProductos, Color(0xFFFF9800))
-            StockBar("Stock Crítico (0)", data.stockCritico, data.totalProductos, Color(0xFFF44336))
+            StockBar("Stock Alto (>10)", data.stockAlto, data.totalProductos, Color(0xFF4CAF50))
+            StockBar("Stock Normal (6-10)", data.stockNormal, data.totalProductos, Color(0xFF2196F3))
+            StockBar("Stock Bajo (4-5)", data.stockBajo, data.totalProductos, Color(0xFFFF9800))
+            StockBar("Stock Crítico (0-3)", data.stockCritico, data.totalProductos, Color(0xFFF44336))
         }
     }
 }

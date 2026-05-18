@@ -124,10 +124,7 @@ fun RegistroScreen(
     val validDomains = setOf(
         "gmail.com", "hotmail.com", "outlook.com", "yahoo.com",
         "icloud.com", "protonmail.com", "aol.com", "mail.com",
-        "gmx.com", "yandex.com", "ucundinamarca.edu.co", "unal.edu.co",
-        "javeriana.edu.co", "andes.edu.co", "eafit.edu.co", "icesi.edu.co",
-        "sabana.edu.co", "urosario.edu.co", "upb.edu.co", "uninorte.edu.co",
-        "utadeo.edu.co", "univalle.edu.co", "unimagdalena.edu.co",
+        "gmx.com", "yandex.com",
         "ucatolica.edu.co", "outlook.es", "hotmail.es", "gmail.es", "yahoo.es"
     )
 
@@ -166,7 +163,7 @@ fun RegistroScreen(
             val message = if (suggestion != null) {
                 "Dominio no válido. ¿Quiso decir @$suggestion?"
             } else {
-                "Dominio no soportado. Usa: Gmail, Hotmail, Outlook, Yahoo, o tu correo institucional (.edu.co)"
+                "Dominio no soportado. Usa: Gmail, Hotmail, Outlook, Yahoo"
             }
             return Pair(false, message)
         }
@@ -211,7 +208,7 @@ fun RegistroScreen(
                 // Si el código expiró, regresar al paso 1
                 if (error.contains("expiró") || error.contains("expirado") || error.contains("tiempo") || error.contains("400")) {
                     scope.launch {
-                        snackbarHostState.showSnackbar("⚠️ El código ha expirado. Por favor solicita uno nuevo.")
+                        snackbarHostState.showSnackbar("⚠ El código ha expirado. Por favor solicita uno nuevo.")
                     }
                     // Limpiar campos y volver al paso 1
                     currentStep = 1
@@ -512,7 +509,7 @@ fun Paso1Email(
                 Text(text = "Dominios válidos:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AquamarineDark)
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Gmail, Hotmail, Outlook, Yahoo, iCloud, .edu.co", fontSize = 10.sp, color = AquamarineDark)
+            Text(text = "Gmail, Hotmail, Outlook, Yahoo, iCloud", fontSize = 10.sp, color = AquamarineDark)
         }
     }
 
@@ -672,7 +669,7 @@ fun Paso3RegistroCompleto(
                         model = selectedImageUri,
                         contentDescription = "Foto de perfil",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
                     )
                 } else {
                     Column(

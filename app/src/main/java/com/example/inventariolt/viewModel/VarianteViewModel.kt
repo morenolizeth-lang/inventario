@@ -18,10 +18,15 @@ class VarianteViewModel : ViewModel() {
     private val _operacionState = MutableStateFlow<OperacionState>(OperacionState.Idle)
     val operacionState: StateFlow<OperacionState> = _operacionState
 
-    fun cargarVariantes() {
+    fun cargarVariantes(tiendaId: Long? = null) {
         viewModelScope.launch {
             _variantesState.value = VarianteListState.Loading
-            repository.getAllVariantes().onSuccess {
+            val result = if (tiendaId != null) {
+                repository.getVariantesByTienda(tiendaId)
+            } else {
+                repository.getAllVariantes()
+            }
+            result.onSuccess {
                 _variantesState.value = VarianteListState.Success(it)
             }.onFailure {
                 _variantesState.value = VarianteListState.Error(it.message ?: "Error desconocido")

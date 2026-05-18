@@ -37,10 +37,14 @@ class ModeloViewModel : ViewModel() {
     // ========== OPERACIONES CRUD ==========
 
     // Obtener todos los modelos
-    fun cargarModelos() {
+    fun cargarModelos(tiendaId: Long? = null) {
         viewModelScope.launch {
             _modelosState.value = ModeloListState.Loading
-            val result = repository.getAllModelos()
+            val result = if (tiendaId != null) {
+                repository.getModelosByTienda(tiendaId)
+            } else {
+                repository.getAllModelos()
+            }
             result.onSuccess { modelos ->
                 _modelosState.value = ModeloListState.Success(modelos)
             }.onFailure { error ->

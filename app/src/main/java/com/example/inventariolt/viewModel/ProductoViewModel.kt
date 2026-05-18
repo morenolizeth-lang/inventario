@@ -38,6 +38,10 @@ class ProductoViewModel : ViewModel() {
     private val _modeloState = MutableStateFlow<ModeloState>(ModeloState.Idle)
     val modeloState: StateFlow<ModeloState> = _modeloState
 
+    // Estado para eliminar producto
+    private val _deleteState = MutableStateFlow<DeleteProductoState>(DeleteProductoState.Idle)
+    val deleteState: StateFlow<DeleteProductoState> = _deleteState
+
     // Cargar todas las variantes disponibles
     fun cargarVariantes() {
         viewModelScope.launch {
@@ -47,6 +51,19 @@ class ProductoViewModel : ViewModel() {
                 _variantesStates.value = VariantesStates.Success(variantes)
             }.onFailure { error ->
                 _variantesStates.value = VariantesStates.Error(error.message ?: "Error al cargar variantes")
+            }
+        }
+    }
+
+    // Eliminar producto
+    fun eliminarProducto(productoId: Long) {
+        viewModelScope.launch {
+            _deleteState.value = DeleteProductoState.Loading
+            val result = productoRepository.deleteProducto(productoId)
+            result.onSuccess {
+                _deleteState.value = DeleteProductoState.Success
+            }.onFailure { error ->
+                _deleteState.value = DeleteProductoState.Error(error.message ?: "Error al eliminar producto")
             }
         }
     }
@@ -111,6 +128,7 @@ class ProductoViewModel : ViewModel() {
         _updateState.value = UpdateProductoState.Idle
         _cambiarVarianteState.value = CambiarVarianteState.Idle
         _modeloState.value = ModeloState.Idle
+        _deleteState.value = DeleteProductoState.Idle
     }
 }
 
@@ -148,4 +166,11 @@ sealed class ModeloState {
     object Loading : ModeloState()
     data class Success(val modelo: ModeloResponseDTO) : ModeloState()
     data class Error(val message: String) : ModeloState()
+}
+
+sealed class DeleteProductoState {
+    object Idle : DeleteProductoState()
+    object Loading : DeleteProductoState()
+    object Success : DeleteProductoState()
+    data class Error(val message: String) : DeleteProductoState()
 }

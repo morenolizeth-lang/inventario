@@ -65,6 +65,34 @@ class UsuarioViewModel : ViewModel() {
         }
     }
 
+    fun actualizarPerfilCompleto(id: Long, request: UsuarioRequestDTO, imagePart: MultipartBody.Part?) {
+        viewModelScope.launch {
+            _updateState.value = UpdatePerfilState.Loading
+
+            // 1. Actualizar información básica
+            val infoResult = usuarioRepository.updateUsuario(id, request)
+
+            infoResult.onSuccess { usuarioActualizado ->
+                // 2. Si hay imagen, subirla
+                if (imagePart != null) {
+                    val imageResult = usuarioRepository.uploadFotoPerfil(id, imagePart)
+                    imageResult.onSuccess { usuarioConFoto ->
+                        _updateState.value = UpdatePerfilState.Success(usuarioConFoto)
+                        cargarPerfil(id)
+                    }.onFailure { error ->
+                        _updateState.value = UpdatePerfilState.Error(error.message ?: "Información actualizada, pero error al subir imagen")
+                        cargarPerfil(id)
+                    }
+                } else {
+                    _updateState.value = UpdatePerfilState.Success(usuarioActualizado)
+                    cargarPerfil(id)
+                }
+            }.onFailure { error ->
+                _updateState.value = UpdatePerfilState.Error(error.message ?: "Error al actualizar perfil")
+            }
+        }
+    }
+
     fun subirFotoPerfil(id: Long, file: MultipartBody.Part) {
         viewModelScope.launch {
             _updateState.value = UpdatePerfilState.Loading
@@ -83,14 +111,25 @@ class UsuarioViewModel : ViewModel() {
         _updateState.value = UpdatePerfilState.Idle
     }
 
-    fun cargarProductos() {
+    fun cargarProductos(tiendaId: Long? = null) {
         viewModelScope.launch {
             _productosState.value = ProductosState.Loading
-            val result = productoRepository.getAllProductos()
+            val result = if (tiendaId != null) {
+                productoRepository.getProductosByTienda(tiendaId)
+            } else {
+                productoRepository.getAllProductos()
+            }
             result.onSuccess { productos ->
                 _productosState.value = ProductosState.Success(productos)
             }.onFailure { error ->
-                _productosState.value = ProductosState.Error(error.message ?: "Error al cargar productos")
+                val msg = error.message ?: ""
+                // Manejamos solo 404 (Not Found) como lista vacía.
+                // Quitamos el 500 para poder ver el error real del servidor.
+                if (msg.contains("404")) {
+                    _productosState.value = ProductosState.Success(emptyList())
+                } else {
+                    _productosState.value = ProductosState.Error(if (msg.isEmpty()) "Error al cargar productos" else msg)
+                }
             }
         }
     }

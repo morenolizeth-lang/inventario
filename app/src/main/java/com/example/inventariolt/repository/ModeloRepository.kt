@@ -14,6 +14,16 @@ class ModeloRepository {
         }
     }
 
+    suspend fun getModelosByTienda(tiendaId: Long): Result<List<ModeloResponseDTO>> {
+        return try {
+            val response = RetrofitClient.modeloApi.getAll()
+            // El DTO de Modelo no tiene tiendaId, se devuelven todos
+            Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun createModelo(request: ModeloRequestDTO): Result<ModeloResponseDTO> {
         return try {
             val response = RetrofitClient.modeloApi.create(request)

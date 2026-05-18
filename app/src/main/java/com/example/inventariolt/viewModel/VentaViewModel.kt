@@ -21,13 +21,22 @@ class VentaViewModel : ViewModel() {
     private val _ventaState = MutableStateFlow<OperacionState>(OperacionState.Idle)
     val ventaState: StateFlow<OperacionState> = _ventaState
 
-    fun cargarProductos() {
+    fun cargarProductos(tiendaId: Long? = null) {
         viewModelScope.launch {
             _productosState.value = VentaProductosState.Loading
-            productoRepository.getAllProductos().onSuccess {
+            val result = if (tiendaId != null) {
+                productoRepository.getProductosByTienda(tiendaId)
+            } else {
+                productoRepository.getAllProductos()
+            }
+            result.onSuccess {
                 _productosState.value = VentaProductosState.Success(it)
-            }.onFailure {
-                _productosState.value = VentaProductosState.Error(it.message ?: "Error al cargar productos")
+            }.onFailure { error ->
+                if (error.message?.contains("404") == true || error.message?.contains("500") == true) {
+                    _productosState.value = VentaProductosState.Success(emptyList())
+                } else {
+                    _productosState.value = VentaProductosState.Error(error.message ?: "Error al cargar productos")
+                }
             }
         }
     }

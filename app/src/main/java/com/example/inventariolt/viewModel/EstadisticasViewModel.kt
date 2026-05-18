@@ -66,31 +66,52 @@ class EstadisticasViewModel : ViewModel() {
         )
     }
 
-    fun cargarDatos() {
+    fun cargarDatos(tiendaId: Long? = null) {
         viewModelScope.launch {
             _productosState.value = EProductosState.Loading
             _ventasState.value = EVentasState.Loading
 
-            val productosResult = productoRepository.getAllProductos()
-            val ventasResult = ventaRepository.getAllVentas()
+            val productosResult = if (tiendaId != null) {
+                productoRepository.getProductosByTienda(tiendaId)
+            } else {
+                productoRepository.getAllProductos()
+            }
+
+            val ventasResult = if (tiendaId != null) {
+                ventaRepository.getVentasByTienda(tiendaId)
+            } else {
+                ventaRepository.getAllVentas()
+            }
 
             productosResult.onSuccess { productos ->
                 _productosState.value = EProductosState.Success(productos)
             }.onFailure { error ->
-                _productosState.value = EProductosState.Error(error.message ?: "Error al cargar productos")
+                if (error.message?.contains("404") == true || error.message?.contains("500") == true) {
+                    _productosState.value = EProductosState.Success(emptyList())
+                } else {
+                    _productosState.value = EProductosState.Error(error.message ?: "Error al cargar productos")
+                }
             }
 
             ventasResult.onSuccess { ventas ->
                 _ventasState.value = EVentasState.Success(ventas)
             }.onFailure { error ->
-                _ventasState.value = EVentasState.Error(error.message ?: "Error al cargar ventas")
+                if (error.message?.contains("404") == true || error.message?.contains("500") == true) {
+                    _ventasState.value = EVentasState.Success(emptyList())
+                } else {
+                    _ventasState.value = EVentasState.Error(error.message ?: "Error al cargar ventas")
+                }
             }
         }
     }
 
     private fun calcularEstadisticas(productos: List<ProductoResponseDTO>, ventas: List<VentaResponseDTO>, filtros: FiltrosState): EstadisticasData {
+        val productIdsTienda = productos.map { it.idProducto }.toSet()
+        
         val ventasFiltradas = ventas.filter { venta ->
-            venta.fechaVenta.isAfter(filtros.fechaInicio) && venta.fechaVenta.isBefore(filtros.fechaFin)
+            venta.fechaVenta.isAfter(filtros.fechaInicio) && 
+            venta.fechaVenta.isBefore(filtros.fechaFin) &&
+            (productIdsTienda.isEmpty() || venta.productoId in productIdsTienda)
         }
 
         val totalProductos = productos.size
@@ -99,13 +120,13 @@ class EstadisticasViewModel : ViewModel() {
         val stockTotal = productos.sumOf { it.stock }
         val valorInventario = productos.sumOf { it.precioCompra.toLong() * it.stock }
 
-        val stockBajo = productos.filter { it.stock in 1..5 }.size
-        val stockCritico = productos.filter { it.stock == 0 }.size
-        val stockNormal = productos.filter { it.stock in 6..20 }.size
-        val stockAlto = productos.filter { it.stock > 20 }.size
+        val stockCritico = productos.filter { it.stock in 0..3 }.size
+        val stockBajo = productos.filter { it.stock in 4..5 }.size
+        val stockNormal = productos.filter { it.stock in 6..10 }.size
+        val stockAlto = productos.filter { it.stock > 10 }.size
 
-        val productosStockBajo = productos.filter { it.stock in 1..5 }
-        val productosStockCritico = productos.filter { it.stock == 0 }
+        val productosStockCritico = productos.filter { it.stock in 0..3 }
+        val productosStockBajo = productos.filter { it.stock in 4..5 }
 
         val productosMasVendidos = ventasFiltradas
             .groupBy { it.productoId }

@@ -15,6 +15,16 @@ class VarianteVisualRepository {
         }
     }
 
+    suspend fun getVariantesByTienda(tiendaId: Long): Result<List<VarianteVisualResponseDTO>> {
+        return try {
+            val response = RetrofitClient.varianteVisualApi.getAll()
+            // El DTO de VarianteVisual no tiene tiendaId, se devuelven todos
+            Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun createVariante(request: VarianteVisualRequestDTO): Result<VarianteVisualResponseDTO> {
         return try {
             val response = RetrofitClient.varianteVisualApi.create(request)

@@ -26,12 +26,15 @@ import com.example.inventariolt.ui.theme.*
 import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
 import com.example.inventariolt.viewModel.VarianteViewModel
 import com.example.inventariolt.viewModel.VarianteListState
+import com.example.inventariolt.viewModel.UsuarioViewModel
+import com.example.inventariolt.viewModel.PerfilState
 import com.google.gson.Gson
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListaVariantesScreen(
     navController: NavController,
+    userId: Long,
     viewModel: VarianteViewModel = viewModel()
 ) {
     val state by viewModel.variantesState.collectAsState()
@@ -149,7 +152,7 @@ fun VarianteItem(
                     SubcomposeAsyncImage(
                         model = variante.imagen,
                         contentDescription = null,
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Fit,
                         error = { Icon(Icons.Default.Image, contentDescription = null, tint = Color.Gray) }
                     )
                 } else {

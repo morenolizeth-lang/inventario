@@ -28,6 +28,8 @@ import com.example.inventariolt.model.inventario.ProductoResponseDTO
 import com.example.inventariolt.viewModel.OperacionState
 import com.example.inventariolt.viewModel.VentaProductosState
 import com.example.inventariolt.viewModel.VentaViewModel
+import com.example.inventariolt.viewModel.UsuarioViewModel
+import com.example.inventariolt.viewModel.PerfilState
 import com.example.inventariolt.ui.theme.*
 import java.util.Locale
 
@@ -40,14 +42,22 @@ fun GenerarVentaScreen(
 ) {
     val productosState by viewModel.productosState.collectAsState()
     val ventaState by viewModel.ventaState.collectAsState()
+    val usuarioViewModel: UsuarioViewModel = viewModel()
+    val perfilState by usuarioViewModel.perfilState.collectAsState()
 
     var selectedProducto by remember { mutableStateOf<ProductoResponseDTO?>(null) }
     var cantidad by remember { mutableStateOf("1") }
     var expanded by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.cargarProductos()
+    LaunchedEffect(userId) {
+        usuarioViewModel.cargarPerfil(userId)
+    }
+
+    LaunchedEffect(perfilState) {
+        if (perfilState is PerfilState.Success) {
+            viewModel.cargarProductos((perfilState as PerfilState.Success).usuario.tiendaId)
+        }
     }
 
     LaunchedEffect(ventaState) {
@@ -223,7 +233,7 @@ fun ProductoCard(producto: ProductoResponseDTO, isSelected: Boolean, onClick: ()
         Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)), color = Color.LightGray) {
                 if (producto.imagen != null) {
-                    SubcomposeAsyncImage(model = producto.imagen, contentDescription = null, contentScale = ContentScale.Crop)
+                    SubcomposeAsyncImage(model = producto.imagen, contentDescription = null, contentScale = ContentScale.Fit)
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))

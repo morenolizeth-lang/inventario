@@ -135,7 +135,7 @@ fun PerfilScreen(
                                 model = usuario.fotoPerfil,
                                 contentDescription = "Foto de perfil",
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
+                                contentScale = ContentScale.Fit,
                                 loading = { CircularProgressIndicator(modifier = Modifier.padding(16.dp)) },
                                 error = { Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray) }
                             )
@@ -401,7 +401,7 @@ fun PerfilScreen(
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .clip(CircleShape),
-                                            contentScale = ContentScale.Crop,
+                                            contentScale = ContentScale.Fit,
                                             loading = {
                                                 Box(
                                                     modifier = Modifier.fillMaxSize(),

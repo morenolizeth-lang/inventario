@@ -33,6 +33,7 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.inventariolt.model.inventario.ProductoResponseDTO
 import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
 import com.example.inventariolt.viewModel.CambiarVarianteState
+import com.example.inventariolt.viewModel.DeleteProductoState
 import com.example.inventariolt.viewModel.ModeloState
 import com.example.inventariolt.viewModel.ProductoViewModel
 import com.example.inventariolt.viewModel.UpdateProductoState
@@ -53,6 +54,7 @@ fun DetalleProductoScreen(
 
     var isEditing by remember { mutableStateOf(false) }
     var showVarianteSelector by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     // Estados para edición
     var editStock by remember { mutableStateOf(producto.stock.toString()) }
@@ -66,11 +68,26 @@ fun DetalleProductoScreen(
     val updateState by viewModel.updateState.collectAsState()
     val cambiarVarianteState by viewModel.cambiarVarianteState.collectAsState()
     val modeloState by viewModel.modeloState.collectAsState()
+    val deleteState by viewModel.deleteState.collectAsState()
 
     // Cargar variantes y el modelo
     LaunchedEffect(Unit) {
         viewModel.cargarVariantes()
         viewModel.cargarModeloPorId(producto.modeloId)
+    }
+
+    // Manejar resultado de eliminación
+    LaunchedEffect(deleteState) {
+        when (deleteState) {
+            is DeleteProductoState.Success -> {
+                Toast.makeText(context, "Producto eliminado exitosamente", Toast.LENGTH_SHORT).show()
+                navController.popBackStack()
+            }
+            is DeleteProductoState.Error -> {
+                Toast.makeText(context, (deleteState as DeleteProductoState.Error).message, Toast.LENGTH_LONG).show()
+            }
+            else -> {}
+        }
     }
 
     // Manejar resultado de actualización
@@ -175,12 +192,21 @@ fun DetalleProductoScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
                     }
-                    IconButton(onClick = { isEditing = !isEditing }) {
-                        Icon(
-                            if (isEditing) Icons.Default.Close else Icons.Default.Edit,
-                            contentDescription = if (isEditing) "Cancelar edición" else "Editar",
-                            tint = Color.White
-                        )
+                    Row {
+                        IconButton(onClick = { showDeleteConfirm = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar producto",
+                                tint = Color.White
+                            )
+                        }
+                        IconButton(onClick = { isEditing = !isEditing }) {
+                            Icon(
+                                if (isEditing) Icons.Default.Close else Icons.Default.Edit,
+                                contentDescription = if (isEditing) "Cancelar edición" else "Editar",
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
 
@@ -199,7 +225,7 @@ fun DetalleProductoScreen(
                             model = producto.imagen ?: varianteSeleccionada?.imagen,
                             contentDescription = producto.modeloNombre,
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
+                            contentScale = ContentScale.Fit,
                             loading = {
                                 Box(contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(color = AquamarinePrimary)
@@ -515,7 +541,7 @@ fun DetalleProductoScreen(
                                                     model = variante.imagen,
                                                     contentDescription = variante.modeloNombre,
                                                     modifier = Modifier.fillMaxSize(),
-                                                    contentScale = ContentScale.Crop
+                                                    contentScale = ContentScale.Fit
                                                 )
                                             } else {
                                                 Box(contentAlignment = Alignment.Center) {
@@ -546,6 +572,31 @@ fun DetalleProductoScreen(
             confirmButton = {
                 TextButton(onClick = { showVarianteSelector = false }) {
                     Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    // Diálogo de confirmación para eliminar
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("¿Eliminar producto?", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.eliminarProducto(producto.idProducto)
+                        showDeleteConfirm = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Eliminar", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancelar")
                 }
             }
         )

@@ -170,14 +170,14 @@ fun DetalleVarianteScreen(
                             model = imagenSeleccionadaUri,
                             contentDescription = "Nueva imagen",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.Fit
                         )
                     } else if (variante.imagen != null) {
                         SubcomposeAsyncImage(
                             model = variante.imagen,
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
+                            contentScale = ContentScale.Fit,
                             error = { Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(100.dp), tint = Color.Gray) }
                         )
                     } else {

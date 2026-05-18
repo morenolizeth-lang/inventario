@@ -150,7 +150,7 @@ fun AgregarProductoScreen(
                                 model = usuario.fotoPerfil,
                                 contentDescription = "Foto de perfil",
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
+                                contentScale = ContentScale.Fit,
                                 loading = { CircularProgressIndicator(modifier = Modifier.padding(16.dp)) },
                                 error = { Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray) }
                             )
@@ -459,7 +459,7 @@ fun VarianteCardCompleta(
                         model = variante.imagen,
                         contentDescription = variante.modeloNombre,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Fit,
                         loading = { Box(contentAlignment = Alignment.Center) { CircularProgressIndicator(modifier = Modifier.size(20.dp)) } },
                         error = { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.Gray) } }
                     )

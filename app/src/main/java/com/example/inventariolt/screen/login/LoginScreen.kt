@@ -92,9 +92,13 @@ fun LoginScreen(
                 if (user.rol == "EMPLEADO") {
                     // Guardar datos del usuario en SharedPreferences
                     val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                    prefs.edit().putLong("user_id", user.idUsuario).apply()
-                    prefs.edit().putString("user_name", user.nombre).apply()
-                    prefs.edit().putString("user_rol", user.rol).apply()
+                    prefs.edit().apply {
+                        putLong("user_id", user.idUsuario)
+                        putString("user_name", user.nombre)
+                        putString("user_rol", user.rol)
+                        putString("user_password", password) // Guardamos la contraseña real
+                        apply()
+                    }
 
                     // Mostrar mensaje de bienvenida
                     scope.launch {
