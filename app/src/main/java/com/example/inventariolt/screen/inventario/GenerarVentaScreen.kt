@@ -79,7 +79,8 @@ fun GenerarVentaScreen(
             Box {
                 HeaderConImagen(
                     titulo = "Generar Venta",
-                    altura = 120.dp
+                    subtitulo = "Registrar nueva transacción",
+                    altura = 180.dp
                 )
                 IconButton(
                     onClick = { navController.popBackStack() },

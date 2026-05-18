@@ -38,22 +38,23 @@ fun HeaderConImagen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.Bottom,
+                .padding(top = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = titulo,
                 color = Color.White,
-                fontSize = 24.sp,
+                fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             if (subtitulo != null) {
                 Text(
                     text = subtitulo,
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.95f),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
             }

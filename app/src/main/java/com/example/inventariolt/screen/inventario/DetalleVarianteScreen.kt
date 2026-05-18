@@ -138,7 +138,7 @@ fun DetalleVarianteScreen(
                 HeaderConImagen(
                     titulo = "Detalle de Variante",
                     subtitulo = "Visualiza y edita esta opción",
-                    altura = 160.dp
+                    altura = 180.dp
                 )
                 IconButton(
                     onClick = { navController.popBackStack() },

@@ -22,7 +22,8 @@ class AgregarProductoViewModel : ViewModel() {
     private val modeloRepository = ModeloRepository()
     private val varianteRepository = VarianteVisualRepository()
     private val productoRepository = ProductoRepository()
-
+    private val _variantesConModeloState = MutableStateFlow<VariantesConModeloState>(VariantesConModeloState.Idle)
+    val variantesConModeloState: StateFlow<VariantesConModeloState> = _variantesConModeloState
     // Estados
     private val _categoriasState = MutableStateFlow<CategoriasState>(CategoriasState.Idle)
     val categoriasState: StateFlow<CategoriasState> = _categoriasState
@@ -142,6 +143,7 @@ class AgregarProductoViewModel : ViewModel() {
             val result = modeloRepository.createModelo(request)
             result.onSuccess { modelo ->
                 _crearModeloState.value = CrearModeloState.Success(modelo)
+                cargarModelos() // Recargar la lista después de crear
             }.onFailure { error ->
                 _crearModeloState.value = CrearModeloState.Error(error.message ?: "Error al crear modelo")
             }
@@ -216,14 +218,39 @@ class AgregarProductoViewModel : ViewModel() {
         _subirImagenState.value = SubirImagenState.Idle
         _crearProductoState.value = CrearProductoState.Idle
     }
-}
 
-// Agregar estado para crear modelo
-sealed class CrearModeloState {
-    object Idle : CrearModeloState()
-    object Loading : CrearModeloState()
-    data class Success(val modelo: ModeloResponseDTO) : CrearModeloState()
-    data class Error(val message: String) : CrearModeloState()
+    // Nuevo método: carga variantes y sus modelos asociados
+    fun cargarVariantesConModelo() {
+        viewModelScope.launch {
+            _variantesConModeloState.value = VariantesConModeloState.Loading
+
+            // 1. Obtener todas las variantes
+            val result = varianteRepository.getAllVariantes()
+            result.onSuccess { variantes ->
+                // 2. Extraer IDs de modelos únicos
+                val modeloIds = variantes.map { it.modeloId }.distinct()
+                val modelosMap = mutableMapOf<Long, ModeloResponseDTO>()
+
+                // 3. Cargar cada modelo (pueden ser varias peticiones, pero solo por ID único)
+                for (modeloId in modeloIds) {
+                    val modeloResult = modeloRepository.getModeloById(modeloId)
+                    modeloResult.onSuccess { modelo ->
+                        modelosMap[modeloId] = modelo
+                    }
+                }
+
+                // 4. Combinar variantes con sus modelos
+                val variantesEnriquecidas = variantes.map { variante ->
+                    VarianteConModelo(variante, modelosMap[variante.modeloId])
+                }
+
+                _variantesConModeloState.value = VariantesConModeloState.Success(variantesEnriquecidas)
+            }.onFailure { error ->
+                _variantesConModeloState.value = VariantesConModeloState.Error(error.message ?: "Error al cargar variantes")
+            }
+        }
+    }
+
 }
 
 // Estados
@@ -269,6 +296,13 @@ sealed class VariantesState {
     data class Error(val message: String) : VariantesState()
 }
 
+sealed class CrearModeloState {
+    object Idle : CrearModeloState()
+    object Loading : CrearModeloState()
+    data class Success(val modelo: ModeloResponseDTO) : CrearModeloState()
+    data class Error(val message: String) : CrearModeloState()
+}
+
 sealed class CrearVarianteState {
     object Idle : CrearVarianteState()
     object Loading : CrearVarianteState()
@@ -288,4 +322,17 @@ sealed class CrearProductoState {
     object Loading : CrearProductoState()
     data class Success(val producto: ProductoResponseDTO) : CrearProductoState()
     data class Error(val message: String) : CrearProductoState()
+}
+
+data class VarianteConModelo(
+    val variante: VarianteVisualResponseDTO,
+    val modelo: ModeloResponseDTO?
+)
+
+// Nuevo estado
+sealed class VariantesConModeloState {
+    object Idle : VariantesConModeloState()
+    object Loading : VariantesConModeloState()
+    data class Success(val variantes: List<VarianteConModelo>) : VariantesConModeloState()
+    data class Error(val message: String) : VariantesConModeloState()
 }

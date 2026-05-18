@@ -60,7 +60,8 @@ fun EstadisticasScreen(
             Box {
                 HeaderConImagen(
                     titulo = "Estadísticas",
-                    altura = 120.dp
+                    subtitulo = "Análisis de rendimiento",
+                    altura = 180.dp
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),

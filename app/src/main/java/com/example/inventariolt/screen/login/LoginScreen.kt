@@ -1,5 +1,6 @@
 package com.example.inventariolt.screen.login
 
+import android.content.Context
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -10,9 +11,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AllInbox
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -21,7 +24,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +43,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Pantalla de login para el sistema de inventario
+ * Solo permite acceso a usuarios con rol EMPLEADO
  */
 @Composable
 fun LoginScreen(
@@ -84,15 +87,36 @@ fun LoginScreen(
             is LoginState.Success -> {
                 isLoading = false
                 val user = (loginState as LoginState.Success).user
-                snackbarHostState.showSnackbar("✅ ¡Bienvenido ${user.nombre}!")
-                navController.navigate("inventario_home/${user.idUsuario}") {
-                    popUpTo("login") { inclusive = true }
+
+                // Verificar si el usuario tiene rol EMPLEADO
+                if (user.rol == "EMPLEADO") {
+                    // Guardar datos del usuario en SharedPreferences
+                    val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                    prefs.edit().putLong("user_id", user.idUsuario).apply()
+                    prefs.edit().putString("user_name", user.nombre).apply()
+                    prefs.edit().putString("user_rol", user.rol).apply()
+
+                    // Mostrar mensaje de bienvenida
+                    scope.launch {
+                        snackbarHostState.showSnackbar("✅ ¡Bienvenido ${user.nombre}!")
+                    }
+
+                    // Navegar al home
+                    navController.navigate("inventario_home/${user.idUsuario}") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                } else {
+                    // Usuario no tiene rol EMPLEADO
+                    errorMessage = "Esta cuenta no se encuentra registrada como empleado."
+                    authViewModel.resetStates()
                 }
             }
             is LoginState.Error -> {
                 isLoading = false
                 errorMessage = (loginState as LoginState.Error).message
-                snackbarHostState.showSnackbar(errorMessage ?: "Error al iniciar sesión")
+                scope.launch {
+                    snackbarHostState.showSnackbar(errorMessage ?: "Error al iniciar sesión")
+                }
             }
             is LoginState.Loading -> {
                 isLoading = true
@@ -136,8 +160,8 @@ fun LoginScreen(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.Inventory,
-                                contentDescription = "Inventario Logo",
+                                imageVector = Icons.Default.AllInbox,
+                                contentDescription = "Inventario",
                                 tint = AquamarinePrimary,
                                 modifier = Modifier.size(44.dp)
                             )
@@ -215,7 +239,7 @@ fun LoginScreen(
                             authViewModel.resetStates()
                         },
                         label = { Text("Correo electrónico") },
-                        placeholder = { Text("usuario@ejemplo.com") },
+                        placeholder = { Text("empleado@ejemplo.com") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
@@ -273,23 +297,6 @@ fun LoginScreen(
                             unfocusedContainerColor = Color.White
                         )
                     )
-
-                    // Link de recuperar contraseña
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    "📧 Contacta al administrador para recuperar tu contraseña"
-                                )
-                            }
-                        },
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text(
-                            text = "¿Olvidaste tu contraseña?",
-                            color = AquamarineDark
-                        )
-                    }
 
                     Spacer(modifier = Modifier.height(24.dp))
 

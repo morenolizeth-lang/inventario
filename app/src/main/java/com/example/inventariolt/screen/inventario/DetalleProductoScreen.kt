@@ -33,6 +33,7 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.inventariolt.model.inventario.ProductoResponseDTO
 import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
 import com.example.inventariolt.viewModel.CambiarVarianteState
+import com.example.inventariolt.viewModel.ModeloState
 import com.example.inventariolt.viewModel.ProductoViewModel
 import com.example.inventariolt.viewModel.UpdateProductoState
 import com.example.inventariolt.viewModel.VariantesStates
@@ -64,10 +65,12 @@ fun DetalleProductoScreen(
     val variantesStates by viewModel.variantesStates.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
     val cambiarVarianteState by viewModel.cambiarVarianteState.collectAsState()
+    val modeloState by viewModel.modeloState.collectAsState()
 
-    // Cargar variantes
+    // Cargar variantes y el modelo
     LaunchedEffect(Unit) {
         viewModel.cargarVariantes()
+        viewModel.cargarModeloPorId(producto.modeloId)
     }
 
     // Manejar resultado de actualización
@@ -143,30 +146,7 @@ fun DetalleProductoScreen(
     }
 
     Scaffold(
-        topBar = {
-            Box {
-                HeaderConImagen(
-                    titulo = "Detalle del Producto",
-                    altura = 120.dp
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-                    }
-                    IconButton(onClick = { isEditing = !isEditing }) {
-                        Icon(
-                            if (isEditing) Icons.Default.Close else Icons.Default.Edit,
-                            contentDescription = if (isEditing) "Cancelar edición" else "Edit",
-                            tint = Color.White
-                        )
-                    }
-                }
-            }
-        }
+        containerColor = Color.Transparent
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -175,49 +155,74 @@ fun DetalleProductoScreen(
                 .background(Color(0xFFF5F5F5))
                 .verticalScroll(rememberScrollState())
         ) {
-            // Imagen del producto (grande)
+            // Header con Imagen cuadrada
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(280.dp)
-                    .background(AquamarineGradient),
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .clip(CircleShape),
-                    color = Color.White,
-                    shadowElevation = 8.dp
-                ) {
-                    SubcomposeAsyncImage(
-                        model = producto.imagen ?: varianteSeleccionada?.imagen,
-                        contentDescription = producto.modeloNombre,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        loading = {
-                            Box(contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(color = AquamarinePrimary)
-                            }
-                        },
-                        error = {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Inventory,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = Color.Gray
-                                )
-                            }
-                        }
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(AquamarineDark, AquamarinePrimary)
+                        )
                     )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                    }
+                    IconButton(onClick = { isEditing = !isEditing }) {
+                        Icon(
+                            if (isEditing) Icons.Default.Close else Icons.Default.Edit,
+                            contentDescription = if (isEditing) "Cancelar edición" else "Editar",
+                            tint = Color.White
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .size(180.dp)
+                            .clip(RoundedCornerShape(16.dp)),
+                        elevation = CardDefaults.cardElevation(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        SubcomposeAsyncImage(
+                            model = producto.imagen ?: varianteSeleccionada?.imagen,
+                            contentDescription = producto.modeloNombre,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            loading = {
+                                Box(contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = AquamarinePrimary)
+                                }
+                            },
+                            error = {
+                                Box(
+                                    modifier = Modifier.fillMaxSize().background(Color(0xFFF0F0F0)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Inventory,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(80.dp),
+                                        tint = Color.Gray
+                                    )
+                                }
+                            }
+                        )
+                    }
                 }
             }
 
-            // Información del producto
             Column(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -235,7 +240,7 @@ fun DetalleProductoScreen(
                     ) {
                         Text(
                             text = producto.modeloNombre,
-                            fontSize = 22.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = AquamarineDark,
                             textAlign = TextAlign.Center
@@ -289,7 +294,7 @@ fun DetalleProductoScreen(
                     }
                 }
 
-                // Información del producto (estilo similar a perfil)
+                // Información del Producto
                 Text(
                     "Información del Producto",
                     style = MaterialTheme.typography.titleMedium,
@@ -339,13 +344,92 @@ fun DetalleProductoScreen(
                     isPrecio = true
                 )
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Información del Modelo
+                Text(
+                    "Información del Modelo",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = AquamarinePrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val currentModeloState = modeloState
+
+                when (currentModeloState) {
+                    is ModeloState.Loading -> {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        }
+                    }
+                    is ModeloState.Success -> {
+                        val modelo = currentModeloState.modelo
+                        InfoCard(
+                            icon = Icons.Default.Sell,
+                            label = "Marca",
+                            value = modelo.marcaNombre
+                        )
+                        InfoCard(
+                            icon = Icons.Default.Category,
+                            label = "Categoría",
+                            value = modelo.categoriaNombre
+                        )
+                        InfoCard(
+                            icon = Icons.Default.Wc,
+                            label = "Género",
+                            value = modelo.generoNombre
+                        )
+                    }
+                    is ModeloState.Error -> {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = currentModeloState.message,
+                                color = Color.Red,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                    }
+                    else -> {}
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Tienda
+                Text(
+                    "Información de la Tienda",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = AquamarinePrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
                 if (producto.tiendaId != null) {
                     InfoCard(
                         icon = Icons.Default.Store,
                         label = "Tienda",
                         value = producto.tiendaNombre
                     )
+                } else {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = AquamarineLight),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Info, contentDescription = null, tint = AquamarineDark)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Este producto no está asignado a ninguna tienda", fontSize = 13.sp)
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

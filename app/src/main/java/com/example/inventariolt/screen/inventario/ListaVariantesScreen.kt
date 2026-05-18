@@ -49,9 +49,9 @@ fun ListaVariantesScreen(
         ) {
             Box {
                 HeaderConImagen(
-                    titulo = "Variantes de Producto",
-                    subtitulo = "Gestiona las opciones visuales",
-                    altura = 160.dp
+                    titulo = "Variantes",
+                    subtitulo = "Opciones de producto",
+                    altura = 180.dp
                 )
                 IconButton(
                     onClick = { navController.popBackStack() },

@@ -2,8 +2,10 @@ package com.example.inventariolt.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.inventariolt.model.inventario.ModeloResponseDTO
 import com.example.inventariolt.model.inventario.ProductoResponseDTO
 import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
+import com.example.inventariolt.repository.ModeloRepository
 import com.example.inventariolt.repository.ProductoRepository
 import com.example.inventariolt.repository.VarianteVisualRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +16,7 @@ class ProductoViewModel : ViewModel() {
 
     private val productoRepository = ProductoRepository()
     private val varianteRepository = VarianteVisualRepository()
+    private val modeloRepository = ModeloRepository()  // ← Agregar instancia del repository
 
     // Estados para el producto
     private val _productoState = MutableStateFlow<ProductoState>(ProductoState.Idle)
@@ -30,6 +33,10 @@ class ProductoViewModel : ViewModel() {
     // Estado para cambiar variante
     private val _cambiarVarianteState = MutableStateFlow<CambiarVarianteState>(CambiarVarianteState.Idle)
     val cambiarVarianteState: StateFlow<CambiarVarianteState> = _cambiarVarianteState
+
+    // Estado para el modelo
+    private val _modeloState = MutableStateFlow<ModeloState>(ModeloState.Idle)
+    val modeloState: StateFlow<ModeloState> = _modeloState
 
     // Cargar todas las variantes disponibles
     fun cargarVariantes() {
@@ -65,7 +72,6 @@ class ProductoViewModel : ViewModel() {
             )
             result.onSuccess { productoActualizado ->
                 _updateState.value = UpdateProductoState.Success(productoActualizado)
-                // También actualizar el producto actual
                 _productoState.value = ProductoState.Success(productoActualizado)
             }.onFailure { error ->
                 _updateState.value = UpdateProductoState.Error(error.message ?: "Error al actualizar producto")
@@ -87,10 +93,24 @@ class ProductoViewModel : ViewModel() {
         }
     }
 
+    // Cargar modelo por ID - CORREGIDO
+    fun cargarModeloPorId(modeloId: Long) {
+        viewModelScope.launch {
+            _modeloState.value = ModeloState.Loading
+            val result = modeloRepository.getModeloById(modeloId)  // ← Usar la instancia, no el companion
+            result.onSuccess { modelo ->
+                _modeloState.value = ModeloState.Success(modelo)
+            }.onFailure { error ->
+                _modeloState.value = ModeloState.Error(error.message ?: "Error al cargar modelo")
+            }
+        }
+    }
+
     // Resetear estados
     fun resetStates() {
         _updateState.value = UpdateProductoState.Idle
         _cambiarVarianteState.value = CambiarVarianteState.Idle
+        _modeloState.value = ModeloState.Idle
     }
 }
 
@@ -121,4 +141,11 @@ sealed class CambiarVarianteState {
     object Loading : CambiarVarianteState()
     data class Success(val producto: ProductoResponseDTO) : CambiarVarianteState()
     data class Error(val message: String) : CambiarVarianteState()
+}
+
+sealed class ModeloState {
+    object Idle : ModeloState()
+    object Loading : ModeloState()
+    data class Success(val modelo: ModeloResponseDTO) : ModeloState()
+    data class Error(val message: String) : ModeloState()
 }

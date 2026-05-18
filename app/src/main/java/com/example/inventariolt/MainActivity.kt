@@ -15,8 +15,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.inventariolt.model.inventario.ProductoResponseDTO
 import com.example.inventariolt.screen.inventario.AgregarProductoScreen
+import com.example.inventariolt.screen.inventario.CrearModeloScreen
 import com.example.inventariolt.screen.inventario.CrearVarianteScreen
 import com.example.inventariolt.screen.inventario.DetalleProductoScreen
+import com.example.inventariolt.screen.inventario.EditarModeloScreen
 import com.example.inventariolt.screen.inventario.InventarioHomeScreen
 import com.example.inventariolt.screen.login.LoginScreen
 import com.example.inventariolt.screen.login.RegistroScreen
@@ -24,6 +26,7 @@ import com.example.inventariolt.screen.perfil.ActualizarPerfilScreen
 import com.example.inventariolt.screen.perfil.PerfilScreen
 import com.example.inventariolt.screen.inventario.EstadisticasScreen
 import com.example.inventariolt.screen.inventario.GenerarVentaScreen
+import com.example.inventariolt.screen.inventario.ListaModelosScreen
 import com.example.inventariolt.ui.theme.InventarioTheme
 import com.google.gson.Gson
 
@@ -161,6 +164,23 @@ fun AppNavigation() {
                 producto = producto,
                 userId = userId
             )
+            // En tu NavHost, agrega:
+
+        }
+
+        composable("crear_modelo") {
+            CrearModeloScreen(navController = navController)
+        }
+        // Pantalla de Lista de Modelos ✅ NUEVA RUTA
+        composable("lista_modelos") {
+            ListaModelosScreen(navController = navController)
+        }
+        composable(
+            route = "editar_modelo/{modeloId}",
+            arguments = listOf(navArgument("modeloId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val modeloId = backStackEntry.arguments?.getLong("modeloId") ?: 0L
+            EditarModeloScreen(navController = navController, modeloId = modeloId)
         }
     }
 }

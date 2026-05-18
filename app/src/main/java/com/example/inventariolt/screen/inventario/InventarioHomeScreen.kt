@@ -150,7 +150,7 @@ fun InventarioHomeScreen(
                     Text("Versión 1.0.0", fontSize = 14.sp, color = Color.Gray)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Desarrollado por:", fontWeight = FontWeight.Bold)
-                    Text("Tu Empresa S.A.", fontSize = 14.sp)
+                    Text("Lizeth M. & Tomas P.", fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("© 2026 - Todos los derechos reservados", fontSize = 12.sp, color = Color.Gray)
                 }
@@ -245,12 +245,24 @@ fun InventarioHomeScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Style, contentDescription = "Variantes") },
-                    label = { Text("Variantes de producto", fontWeight = FontWeight.Medium) },
+                    label = { Text("Variantes", fontWeight = FontWeight.Medium) },
                     selected = false,
                     onClick = {
                         scope.launch {
                             drawerState.close()
                             navController.navigate("lista_variantes")
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )// En InventarioHomeScreen, dentro del ModalDrawerSheet, después de NavigationDrawerItem de Variantes
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Inventory2, contentDescription = "Modelos") },
+                    label = { Text("Modelos", fontWeight = FontWeight.Medium) },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate("lista_modelos")
                         }
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -333,10 +345,18 @@ fun InventarioHomeScreen(
             topBar = {
                 Box {
                     HeaderConImagen(
-                        titulo = "Sistema de Inventario",
+                        titulo = "Inventario",
                         subtitulo = "Control de productos",
-                        altura = 200.dp
-                    )
+                        altura = 180.dp
+                    ) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Inventory,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.White
+                        )
+                    }
                     IconButton(
                         onClick = { scope.launch { drawerState.open() } },
                         modifier = Modifier

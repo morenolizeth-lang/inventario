@@ -84,10 +84,16 @@ fun ActualizarPerfilScreen(
                 viewModel.resetUpdateState()
                 navController.popBackStack()
             }
+
             is UpdatePerfilState.Error -> {
-                Toast.makeText(context, (updateState as UpdatePerfilState.Error).message, Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    context,
+                    (updateState as UpdatePerfilState.Error).message,
+                    Toast.LENGTH_LONG
+                ).show()
                 viewModel.resetUpdateState()
             }
+
             else -> {}
         }
     }
@@ -106,20 +112,7 @@ fun ActualizarPerfilScreen(
     }
 
     Scaffold(
-        topBar = {
-            Box {
-                HeaderConImagen(
-                    titulo = "Editar Perfil",
-                    altura = 120.dp
-                )
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-                }
-            }
-        }
+        containerColor = Color.Transparent
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -129,8 +122,12 @@ fun ActualizarPerfilScreen(
         ) {
             when (perfilState) {
                 is PerfilState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = AquamarinePrimary)
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = AquamarinePrimary
+                    )
                 }
+
                 is PerfilState.Success -> {
                     val usuario = (perfilState as PerfilState.Success).usuario
 
@@ -140,27 +137,38 @@ fun ActualizarPerfilScreen(
                             .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Header con foto y opción de editar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        // Header con foto superpuesta (Estilo unificado)
+                        Box(contentAlignment = Alignment.BottomCenter) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(AquamarineGradient)
-                            )
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.TopStart
+                            ) {
+                                HeaderConImagen(
+                                    titulo = "Editar Perfil",
+                                    altura = 180.dp
+                                )
+                                IconButton(
+                                    onClick = { navController.popBackStack() },
+                                    modifier = Modifier.padding(start = 8.dp, top = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Volver",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+
+                            // Foto de perfil superpuesta
                             Box(
-                                modifier = Modifier.offset(y = 60.dp),
+                                modifier = Modifier.offset(y = 50.dp),
                                 contentAlignment = Alignment.BottomEnd
                             ) {
                                 Surface(
                                     modifier = Modifier.size(110.dp),
                                     shape = CircleShape,
                                     color = Color.White,
-                                    shadowElevation = 4.dp
+                                    shadowElevation = 8.dp
                                 ) {
                                     if (usuario.fotoPerfil == null) {
                                         Icon(
@@ -185,7 +193,11 @@ fun ActualizarPerfilScreen(
                                     containerColor = Color.White,
                                     contentColor = AquamarinePrimary
                                 ) {
-                                    Icon(Icons.Default.CameraAlt, contentDescription = "Cambiar foto", modifier = Modifier.size(18.dp))
+                                    Icon(
+                                        Icons.Default.CameraAlt,
+                                        contentDescription = "Cambiar foto",
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                             }
                         }
@@ -209,7 +221,12 @@ fun ActualizarPerfilScreen(
                                 value = nombre,
                                 onValueChange = { nombre = it },
                                 label = { Text("Nombre Completo") },
-                                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Person,
+                                        contentDescription = null
+                                    )
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -223,7 +240,12 @@ fun ActualizarPerfilScreen(
                                 value = correo,
                                 onValueChange = { correo = it },
                                 label = { Text("Correo Electrónico") },
-                                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Email,
+                                        contentDescription = null
+                                    )
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -247,7 +269,9 @@ fun ActualizarPerfilScreen(
                                     text = "Cambiar contraseña",
                                     fontSize = 14.sp,
                                     color = AquamarineDark,
-                                    modifier = Modifier.clickable { cambiarPassword = !cambiarPassword }
+                                    modifier = Modifier.clickable {
+                                        cambiarPassword = !cambiarPassword
+                                    }
                                 )
                             }
 
@@ -257,12 +281,19 @@ fun ActualizarPerfilScreen(
                                     value = password,
                                     onValueChange = { password = it },
                                     label = { Text("Nueva Contraseña") },
-                                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Lock,
+                                            contentDescription = null
+                                        )
+                                    },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                     trailingIcon = {
-                                        IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                                        IconButton(onClick = {
+                                            isPasswordVisible = !isPasswordVisible
+                                        }) {
                                             Icon(
                                                 imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                                 contentDescription = "Mostrar contraseña"
@@ -280,12 +311,19 @@ fun ActualizarPerfilScreen(
                                     value = confirmPassword,
                                     onValueChange = { confirmPassword = it },
                                     label = { Text("Verificar Contraseña") },
-                                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Lock,
+                                            contentDescription = null
+                                        )
+                                    },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     visualTransformation = if (isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                     trailingIcon = {
-                                        IconButton(onClick = { isConfirmPasswordVisible = !isConfirmPasswordVisible }) {
+                                        IconButton(onClick = {
+                                            isConfirmPasswordVisible = !isConfirmPasswordVisible
+                                        }) {
                                             Icon(
                                                 imageVector = if (isConfirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                                 contentDescription = "Mostrar contraseña"
@@ -337,17 +375,29 @@ fun ActualizarPerfilScreen(
                                 enabled = updateState !is UpdatePerfilState.Loading && canSave
                             ) {
                                 if (updateState is UpdatePerfilState.Loading) {
-                                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 } else {
-                                    Text("Guardar Cambios", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "Guardar Cambios",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
                         }
                     }
                 }
+
                 is PerfilState.Error -> {
-                    Text("Error: ${(perfilState as PerfilState.Error).message}", modifier = Modifier.align(Alignment.Center))
+                    Text(
+                        "Error: ${(perfilState as PerfilState.Error).message}",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
+
                 else -> {}
             }
         }
