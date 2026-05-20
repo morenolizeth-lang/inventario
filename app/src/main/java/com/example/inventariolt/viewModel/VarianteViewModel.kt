@@ -2,8 +2,8 @@ package com.example.inventariolt.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.inventariolt.model.inventario.VarianteVisualRequestDTO
-import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualResponseDTO
 import com.example.inventariolt.repository.VarianteVisualRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

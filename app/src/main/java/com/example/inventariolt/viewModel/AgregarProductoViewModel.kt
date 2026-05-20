@@ -1,9 +1,8 @@
 package com.example.inventariolt.viewModel
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.inventariolt.model.inventario.*
+import com.example.inventariolt.model.inventario_Empleado.*
 import com.example.inventariolt.repository.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

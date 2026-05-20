@@ -13,7 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.inventariolt.model.inventario.ProductoResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ProductoResponseDTO
 import com.example.inventariolt.screen.inventario.AgregarProductoScreen
 import com.example.inventariolt.screen.inventario.CrearModeloScreen
 import com.example.inventariolt.screen.inventario.CrearVarianteScreen
@@ -27,6 +27,7 @@ import com.example.inventariolt.screen.perfil.PerfilScreen
 import com.example.inventariolt.screen.inventario.EstadisticasScreen
 import com.example.inventariolt.screen.inventario.GenerarVentaScreen
 import com.example.inventariolt.screen.inventario.ListaModelosScreen
+import com.example.inventariolt.screen.inventario_consulta.InventarioConsultaScreen
 import com.example.inventariolt.ui.theme.InventarioTheme
 import com.google.gson.Gson
 
@@ -71,6 +72,15 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
             InventarioHomeScreen(navController = navController, userId = userId)
+        }
+
+        // Pantalla de Inventario Consulta (Dashboard para rol CONSULTA)
+        composable(
+            route = "inventario_consulta/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+            InventarioConsultaScreen(navController = navController, userId = userId)
         }
 
         // Pantalla de Agregar Producto
@@ -128,7 +138,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("varianteJson") { type = NavType.StringType })
         ) { backStackEntry ->
             val varianteJson = backStackEntry.arguments?.getString("varianteJson") ?: ""
-            val variante = Gson().fromJson(varianteJson, com.example.inventariolt.model.inventario.VarianteVisualResponseDTO::class.java)
+            val variante = Gson().fromJson(varianteJson, com.example.inventariolt.model.inventario_Empleado.VarianteVisualResponseDTO::class.java)
             com.example.inventariolt.screen.inventario.DetalleVarianteScreen(
                 navController = navController,
                 variante = variante

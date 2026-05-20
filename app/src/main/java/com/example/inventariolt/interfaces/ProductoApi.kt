@@ -1,8 +1,8 @@
 package com.example.inventariolt.interfaces
 
 
-import com.example.inventariolt.model.inventario.ProductoRequestDTO
-import com.example.inventariolt.model.inventario.ProductoResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ProductoRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.ProductoResponseDTO
 import retrofit2.Response
 import retrofit2.http.*
 

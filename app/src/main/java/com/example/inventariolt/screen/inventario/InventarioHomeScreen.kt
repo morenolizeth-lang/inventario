@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
@@ -83,20 +82,24 @@ fun InventarioHomeScreen(
     var showInfoDialog by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    // Filtrar productos por búsqueda
-    val filteredProducts = when (productosState) {
-        is ProductosState.Success -> {
-            val productos = (productosState as ProductosState.Success).productos
-            if (searchText.isEmpty()) {
-                productos
-            } else {
-                productos.filter {
-                    it.modeloNombre.contains(searchText, ignoreCase = true) ||
-                            it.talla.contains(searchText, ignoreCase = true)
+    // Filtrar productos por búsqueda con protección extrema contra nulos
+    val filteredProducts = remember(productosState, searchText) {
+        when (productosState) {
+            is ProductosState.Success -> {
+                val productos = (productosState as ProductosState.Success).productos
+                val query = searchText.trim()
+                if (query.isEmpty()) {
+                    productos
+                } else {
+                    productos.filter {
+                        (it.modeloNombre?.contains(query, ignoreCase = true) == true) ||
+                                (it.talla?.contains(query, ignoreCase = true) == true) ||
+                                (it.marcaNombre?.contains(query, ignoreCase = true) == true)
+                    }
                 }
             }
+            else -> emptyList()
         }
-        else -> emptyList()
     }
 
     // Diálogo de cierre de sesión
@@ -232,6 +235,19 @@ fun InventarioHomeScreen(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
+
+                    if (usuario != null) {
+                        Text(
+                            text = when (usuario.rol) {
+                                "CONSULTA" -> "EMPLEADO"
+                                "EMPLEADO" -> "ADMIN TIENDA"
+                                else -> usuario.rol
+                            },
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
 
                     Text(
                         text = usuario?.correo ?: "",
@@ -585,7 +601,7 @@ fun InventarioHomeScreen(
 
 @Composable
 fun ProductCard(
-    product: com.example.inventariolt.model.inventario.ProductoResponseDTO,
+    product: com.example.inventariolt.model.inventario_Empleado.ProductoResponseDTO,
     navController: NavController,
     userId: Long
 ) {

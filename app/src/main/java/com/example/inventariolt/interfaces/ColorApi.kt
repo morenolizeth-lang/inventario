@@ -1,7 +1,7 @@
 package com.example.inventariolt.interfaces
 
-import com.example.inventariolt.model.inventario.ColorRequestDTO
-import com.example.inventariolt.model.inventario.ColorResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ColorRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.ColorResponseDTO
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE

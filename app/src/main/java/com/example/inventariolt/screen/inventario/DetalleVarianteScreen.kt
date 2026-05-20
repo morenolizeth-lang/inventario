@@ -28,8 +28,8 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import com.example.inventariolt.ui.theme.*
-import com.example.inventariolt.model.inventario.VarianteVisualRequestDTO
-import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualResponseDTO
 import com.example.inventariolt.viewModel.AgregarProductoViewModel
 import com.example.inventariolt.viewModel.ColoresState
 import com.example.inventariolt.viewModel.ModelosState

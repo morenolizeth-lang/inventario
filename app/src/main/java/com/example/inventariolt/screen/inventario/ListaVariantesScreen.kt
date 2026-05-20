@@ -23,11 +23,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import com.example.inventariolt.ui.theme.*
-import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualResponseDTO
 import com.example.inventariolt.viewModel.VarianteViewModel
 import com.example.inventariolt.viewModel.VarianteListState
-import com.example.inventariolt.viewModel.UsuarioViewModel
-import com.example.inventariolt.viewModel.PerfilState
 import com.google.gson.Gson
 
 @OptIn(ExperimentalMaterial3Api::class)

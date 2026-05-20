@@ -1,8 +1,8 @@
 package com.example.inventariolt.repository
 
 import com.example.inventariolt.interfaces.RetrofitClient
-import com.example.inventariolt.model.inventario.VarianteVisualRequestDTO
-import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualResponseDTO
 import okhttp3.MultipartBody
 
 class VarianteVisualRepository {

@@ -2,9 +2,9 @@ package com.example.inventariolt.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.inventariolt.model.inventario.ModeloResponseDTO
-import com.example.inventariolt.model.inventario.ProductoResponseDTO
-import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ModeloResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ProductoResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualResponseDTO
 import com.example.inventariolt.repository.ModeloRepository
 import com.example.inventariolt.repository.ProductoRepository
 import com.example.inventariolt.repository.VarianteVisualRepository

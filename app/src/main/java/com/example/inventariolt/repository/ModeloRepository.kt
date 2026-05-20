@@ -1,8 +1,8 @@
 package com.example.inventariolt.repository
 
 import com.example.inventariolt.interfaces.RetrofitClient
-import com.example.inventariolt.model.inventario.ModeloRequestDTO
-import com.example.inventariolt.model.inventario.ModeloResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ModeloRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.ModeloResponseDTO
 
 class ModeloRepository {
     suspend fun getAllModelos(): Result<List<ModeloResponseDTO>> {

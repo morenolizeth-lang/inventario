@@ -28,7 +28,6 @@ import com.example.inventariolt.viewModel.CategoriasState
 import com.example.inventariolt.viewModel.CrearModeloState
 import com.example.inventariolt.viewModel.GenerosState
 import com.example.inventariolt.viewModel.MarcasState
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -584,7 +583,7 @@ fun CrearModeloScreen(
 
 @Composable
 fun MarcaItemCard(
-    marca: com.example.inventariolt.model.inventario.MarcaResponseDTO,
+    marca: com.example.inventariolt.model.inventario_Empleado.MarcaResponseDTO,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -644,7 +643,7 @@ fun MarcaItemCard(
 
 @Composable
 fun CategoriaItemCard(
-    categoria: com.example.inventariolt.model.inventario.CategoriaResponseDTO,
+    categoria: com.example.inventariolt.model.inventario_Empleado.CategoriaResponseDTO,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -704,7 +703,7 @@ fun CategoriaItemCard(
 
 @Composable
 fun GeneroItemCard(
-    genero: com.example.inventariolt.model.inventario.GeneroResponseDTO,
+    genero: com.example.inventariolt.model.inventario_Empleado.GeneroResponseDTO,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {

@@ -1,23 +1,13 @@
 package com.example.inventariolt.screen.login
 
 import android.content.Context
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AllInbox
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,20 +29,14 @@ import androidx.navigation.compose.rememberNavController
 import com.example.inventariolt.viewModel.AuthViewModel
 import com.example.inventariolt.viewModel.LoginState
 import com.example.inventariolt.ui.theme.*
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
-/**
- * Pantalla de login para el sistema de inventario
- * Solo permite acceso a usuarios con rol EMPLEADO
- */
 @Composable
 fun LoginScreen(
     navController: NavController,
     authViewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     // Estados del formulario
     var email by remember { mutableStateOf("") }
@@ -61,66 +45,53 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Observar estado del login desde ViewModel
+    // Estado para el diálogo de cuenta inhabilitada
+    var showDisabledDialog by remember { mutableStateOf(false) }
+
+    // Observar estado del login
     val loginState by authViewModel.loginState.collectAsState()
-
-    // Animación de entrada
-    var startAnimation by remember { mutableStateOf(false) }
-    val introAlpha by animateFloatAsState(
-        targetValue = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
-        label = "intro_alpha"
-    )
-    val introOffset by animateDpAsState(
-        targetValue = if (startAnimation) 0.dp else 28.dp,
-        animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
-        label = "intro_offset"
-    )
-
-    LaunchedEffect(Unit) {
-        startAnimation = true
-    }
 
     // Manejar respuesta del login
     LaunchedEffect(loginState) {
-        when (loginState) {
+        when (val state = loginState) {
             is LoginState.Success -> {
                 isLoading = false
-                val user = (loginState as LoginState.Success).user
+                val user = state.user
 
-                // Verificar si el usuario tiene rol EMPLEADO
-                if (user.rol == "EMPLEADO") {
-                    // Guardar datos del usuario en SharedPreferences
-                    val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                    prefs.edit().apply {
-                        putLong("user_id", user.idUsuario)
-                        putString("user_name", user.nombre)
-                        putString("user_rol", user.rol)
-                        putString("user_password", password) // Guardamos la contraseña real
-                        apply()
-                    }
-
-                    // Mostrar mensaje de bienvenida
-                    scope.launch {
-                        snackbarHostState.showSnackbar("✅ ¡Bienvenido ${user.nombre}!")
-                    }
-
-                    // Navegar al home
-                    navController.navigate("inventario_home/${user.idUsuario}") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                } else {
-                    // Usuario no tiene rol EMPLEADO
-                    errorMessage = "Esta cuenta no se encuentra registrada como empleado."
-                    authViewModel.resetStates()
+                // Usuario activo y válido
+                val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                prefs.edit().apply {
+                    putLong("user_id", user.idUsuario)
+                    putString("user_name", user.nombre)
+                    putString("user_rol", user.rol)
+                    putString("user_password", password)
+                    apply()
                 }
+
+                val destination = if (user.rol == "CONSULTA") {
+                    "inventario_consulta/${user.idUsuario}"
+                } else {
+                    "inventario_home/${user.idUsuario}"
+                }
+                navController.navigate(destination) {
+                    popUpTo("login") { inclusive = true }
+                }
+                authViewModel.resetStates()
             }
             is LoginState.Error -> {
                 isLoading = false
-                errorMessage = (loginState as LoginState.Error).message
-                scope.launch {
-                    snackbarHostState.showSnackbar(errorMessage ?: "Error al iniciar sesión")
+                val errorMsg = state.message
+
+                // Verificar si el error es por usuario inactivo
+                if (errorMsg.contains("no esta activo", ignoreCase = true) ||
+                    errorMsg.contains("inhabilitado", ignoreCase = true) ||
+                    errorMsg.contains("no está activo", ignoreCase = true)) {
+                    // Mostrar diálogo de cuenta inhabilitada
+                    showDisabledDialog = true
+                } else {
+                    errorMessage = errorMsg
                 }
+                authViewModel.resetStates()
             }
             is LoginState.Loading -> {
                 isLoading = true
@@ -129,8 +100,91 @@ fun LoginScreen(
         }
     }
 
+    // Diálogo de cuenta inhabilitada
+    if (showDisabledDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDisabledDialog = false
+                // Limpiar campos
+                email = ""
+                password = ""
+                errorMessage = null
+            },
+            title = {
+                Text(
+                    text = "⚠️ CUENTA INHABILITADA",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFC62828)
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "El usuario no está activo en el sistema.",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF424242)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Divider(color = Color(0xFFE0E0E0))
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Posibles causas:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF616161)
+                    )
+                    Text("• El administrador ha desactivado la cuenta.", fontSize = 12.sp, color = Color(0xFF757575))
+                    Text("• Cese de funciones o actualización de contrato.", fontSize = 12.sp, color = Color(0xFF757575))
+                    Text("• La cuenta está pendiente de verificación.", fontSize = 12.sp, color = Color(0xFF757575))
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Surface(
+                        color = Color(0xFFE3F2FD),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "📞 Por favor, contacte al Administrador del sistema para reactivar su cuenta.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF1565C0),
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDisabledDialog = false
+                        email = ""
+                        password = ""
+                        errorMessage = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AquamarinePrimary,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("ACEPTAR", fontWeight = FontWeight.Bold)
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White
+        )
+    }
+
+    // Pantalla principal de login
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color.Transparent
     ) { paddingValues ->
         Box(
@@ -143,9 +197,7 @@ fun LoginScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .alpha(introAlpha)
-                    .offset(y = introOffset),
+                    .padding(horizontal = 24.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(16.dp)
@@ -156,7 +208,7 @@ fun LoginScreen(
                         .padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Icono de inventario
+                    // Icono
                     Surface(
                         modifier = Modifier.size(80.dp),
                         shape = RoundedCornerShape(24.dp),
@@ -174,7 +226,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Título
                     Text(
                         text = "SISTEMA DE INVENTARIO",
                         style = MaterialTheme.typography.headlineSmall,
@@ -192,7 +243,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Indicador de carga
                     if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(32.dp),
@@ -201,16 +251,11 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    // Mensaje de error
                     errorMessage?.let {
                         Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFFFEBEE)
-                            ),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
                             shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .padding(bottom = 16.dp)
-                                .fillMaxWidth(),
+                            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
                             border = BorderStroke(1.dp, Color(0xFFEF5350).copy(alpha = 0.5f))
                         ) {
                             Row(
@@ -234,13 +279,11 @@ fun LoginScreen(
                         }
                     }
 
-                    // Campo Email
                     OutlinedTextField(
                         value = email,
                         onValueChange = {
                             email = it
                             errorMessage = null
-                            authViewModel.resetStates()
                         },
                         label = { Text("Correo electrónico") },
                         placeholder = { Text("empleado@ejemplo.com") },
@@ -248,11 +291,7 @@ fun LoginScreen(
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
                         leadingIcon = {
-                            Icon(
-                                Icons.Default.Email,
-                                contentDescription = null,
-                                tint = AquamarinePrimary
-                            )
+                            Icon(Icons.Default.Email, contentDescription = null, tint = AquamarinePrimary)
                         },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = AquamarinePrimary,
@@ -264,13 +303,11 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Campo Contraseña
                     OutlinedTextField(
                         value = password,
                         onValueChange = {
                             password = it
                             errorMessage = null
-                            authViewModel.resetStates()
                         },
                         label = { Text("Contraseña") },
                         placeholder = { Text("Ingrese su contraseña") },
@@ -279,11 +316,7 @@ fun LoginScreen(
                         shape = RoundedCornerShape(16.dp),
                         visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         leadingIcon = {
-                            Icon(
-                                Icons.Default.Lock,
-                                contentDescription = null,
-                                tint = AquamarinePrimary
-                            )
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = AquamarinePrimary)
                         },
                         trailingIcon = {
                             IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
@@ -304,7 +337,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Botón de inicio de sesión
                     Button(
                         onClick = {
                             if (email.isBlank() || password.isBlank()) {
@@ -314,9 +346,7 @@ fun LoginScreen(
                             errorMessage = null
                             authViewModel.login(email, password)
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
                         enabled = !isLoading,
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -342,7 +372,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Línea divisoria con "o"
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -367,7 +396,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Sección de registro
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
@@ -384,7 +412,6 @@ fun LoginScreen(
                             color = AquamarinePrimary,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable {
-                                authViewModel.resetStates()
                                 navController.navigate("registro")
                             }
                         )
@@ -392,7 +419,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Versión del sistema
                     Text(
                         text = "v1.0.0",
                         fontSize = 12.sp,
@@ -405,14 +431,7 @@ fun LoginScreen(
     }
 }
 
-/**
- * Preview básica del LoginScreen
- */
-@Preview(
-    name = "Login Screen - Light Mode",
-    showBackground = true,
-    backgroundColor = 0xFF00796B
-)
+@Preview(name = "Login Screen", showBackground = true, backgroundColor = 0xFF00796B)
 @Composable
 fun LoginScreenPreview() {
     MaterialTheme {

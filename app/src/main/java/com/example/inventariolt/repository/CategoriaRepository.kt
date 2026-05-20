@@ -4,7 +4,7 @@ package com.example.inventariolt.repository
 
 
 import com.example.inventariolt.interfaces.RetrofitClient
-import com.example.inventariolt.model.inventario.CategoriaResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.CategoriaResponseDTO
 
 class CategoriaRepository {
     suspend fun getAllCategorias(): Result<List<CategoriaResponseDTO>> {

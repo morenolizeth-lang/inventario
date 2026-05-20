@@ -12,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -20,11 +19,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.inventariolt.ui.theme.*
-import com.example.inventariolt.model.inventario.ModeloResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ModeloResponseDTO
 import com.example.inventariolt.viewModel.ModeloListState
 import com.example.inventariolt.viewModel.ModeloViewModel
-import com.example.inventariolt.viewModel.UsuarioViewModel
-import com.example.inventariolt.viewModel.PerfilState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

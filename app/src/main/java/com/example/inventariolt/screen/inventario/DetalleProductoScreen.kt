@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
-import com.example.inventariolt.model.inventario.ProductoResponseDTO
-import com.example.inventariolt.model.inventario.VarianteVisualResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ProductoResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.VarianteVisualResponseDTO
 import com.example.inventariolt.viewModel.CambiarVarianteState
 import com.example.inventariolt.viewModel.DeleteProductoState
 import com.example.inventariolt.viewModel.ModeloState
@@ -39,7 +39,6 @@ import com.example.inventariolt.viewModel.ProductoViewModel
 import com.example.inventariolt.viewModel.UpdateProductoState
 import com.example.inventariolt.viewModel.VariantesStates
 import com.example.inventariolt.ui.theme.*
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +50,11 @@ fun DetalleProductoScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    val userRole = remember {
+        context.getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
+            .getString("user_rol", "") ?: ""
+    }
 
     var isEditing by remember { mutableStateOf(false) }
     var showVarianteSelector by remember { mutableStateOf(false) }
@@ -192,20 +196,22 @@ fun DetalleProductoScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
                     }
-                    Row {
-                        IconButton(onClick = { showDeleteConfirm = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Eliminar producto",
-                                tint = Color.White
-                            )
-                        }
-                        IconButton(onClick = { isEditing = !isEditing }) {
-                            Icon(
-                                if (isEditing) Icons.Default.Close else Icons.Default.Edit,
-                                contentDescription = if (isEditing) "Cancelar edición" else "Editar",
-                                tint = Color.White
-                            )
+                    if (userRole != "CONSULTA") {
+                        Row {
+                            IconButton(onClick = { showDeleteConfirm = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Eliminar producto",
+                                    tint = Color.White
+                                )
+                            }
+                            IconButton(onClick = { isEditing = !isEditing }) {
+                                Icon(
+                                    if (isEditing) Icons.Default.Close else Icons.Default.Edit,
+                                    contentDescription = if (isEditing) "Cancelar edición" else "Editar",
+                                    tint = Color.White
+                                )
+                            }
                         }
                     }
                 }

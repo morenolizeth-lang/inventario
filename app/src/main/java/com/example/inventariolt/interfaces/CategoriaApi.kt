@@ -1,8 +1,7 @@
 package com.example.inventariolt.interfaces
 
-import com.example.inventariolt.model.inventario.CategoriaRequestDTO
-import com.example.inventariolt.model.inventario.CategoriaResponseDTO
-import okhttp3.MultipartBody
+import com.example.inventariolt.model.inventario_Empleado.CategoriaRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.CategoriaResponseDTO
 import retrofit2.Response
 import retrofit2.http.*
 

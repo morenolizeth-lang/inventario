@@ -1,6 +1,5 @@
 package com.example.inventariolt.screen.inventario
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -24,14 +23,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
-import com.example.inventariolt.model.inventario.ProductoResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ProductoResponseDTO
 import com.example.inventariolt.viewModel.OperacionState
 import com.example.inventariolt.viewModel.VentaProductosState
 import com.example.inventariolt.viewModel.VentaViewModel
 import com.example.inventariolt.viewModel.UsuarioViewModel
 import com.example.inventariolt.viewModel.PerfilState
 import com.example.inventariolt.ui.theme.*
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

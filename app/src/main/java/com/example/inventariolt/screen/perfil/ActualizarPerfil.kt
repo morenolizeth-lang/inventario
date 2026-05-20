@@ -227,6 +227,33 @@ fun ActualizarPerfilScreen(
                                 fontWeight = FontWeight.Bold
                             )
 
+                            // Mostrar Rol (Lectura solamente)
+                            OutlinedTextField(
+                                value = when (usuario.rol) {
+                                    "CONSULTA" -> "EMPLEADO"
+                                    "EMPLEADO" -> "ADMIN TIENDA"
+                                    else -> usuario.rol
+                                },
+                                onValueChange = { },
+                                label = { Text("Rol") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Badge,
+                                        contentDescription = null
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                readOnly = true,
+                                enabled = false,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledBorderColor = Color.LightGray,
+                                    disabledTextColor = Color.Gray,
+                                    disabledLabelColor = Color.Gray,
+                                    disabledLeadingIconColor = Color.Gray
+                                )
+                            )
+
                             OutlinedTextField(
                                 value = nombre,
                                 onValueChange = { nombre = it },

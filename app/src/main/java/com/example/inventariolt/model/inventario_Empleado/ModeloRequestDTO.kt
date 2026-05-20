@@ -1,4 +1,4 @@
-package com.example.inventariolt.model.inventario
+package com.example.inventariolt.model.inventario_Empleado
 
 data class ModeloRequestDTO(
     val nombre: String,

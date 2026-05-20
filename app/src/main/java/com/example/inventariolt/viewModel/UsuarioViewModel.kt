@@ -2,13 +2,11 @@ package com.example.inventariolt.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.inventariolt.model.inventario.ProductoResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.*
 import com.example.inventariolt.model.login.TiendaResponseDTO
 import com.example.inventariolt.model.login.UsuarioRequestDTO
 import com.example.inventariolt.model.login.UsuarioResponseDTO
-import com.example.inventariolt.repository.ProductoRepository
-import com.example.inventariolt.repository.TiendaRepository
-import com.example.inventariolt.repository.UsuarioRepository
+import com.example.inventariolt.repository.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -26,8 +24,36 @@ class UsuarioViewModel : ViewModel() {
 
     private val productoRepository = ProductoRepository()
 
+    // Inyectar o instanciar repositorios necesarios para filtros
+    private val modeloRepository = ModeloRepository()
+    private val categoriaRepository = CategoriaRepository()
+    private val marcaRepository = MarcaRepository()
+    private val generoRepository = GeneroRepository()
+
     private val _productosState = MutableStateFlow<ProductosState>(ProductosState.Idle)
     val productosState: StateFlow<ProductosState> = _productosState
+
+    // Estados para catálogos (filtros)
+    private val _modelosState = MutableStateFlow<List<ModeloResponseDTO>>(emptyList())
+    val modelosState: StateFlow<List<ModeloResponseDTO>> = _modelosState
+
+    private val _categoriasState = MutableStateFlow<List<CategoriaResponseDTO>>(emptyList())
+    val categoriasState: StateFlow<List<CategoriaResponseDTO>> = _categoriasState
+
+    private val _marcasState = MutableStateFlow<List<MarcaResponseDTO>>(emptyList())
+    val marcasState: StateFlow<List<MarcaResponseDTO>> = _marcasState
+
+    private val _generosState = MutableStateFlow<List<GeneroResponseDTO>>(emptyList())
+    val generosState: StateFlow<List<GeneroResponseDTO>> = _generosState
+
+    fun cargarFiltros() {
+        viewModelScope.launch {
+            modeloRepository.getAllModelos().onSuccess { modelos -> _modelosState.value = modelos }
+            categoriaRepository.getAllCategorias().onSuccess { categorias -> _categoriasState.value = categorias }
+            marcaRepository.getAllMarcas().onSuccess { marcas -> _marcasState.value = marcas }
+            generoRepository.getAllGeneros().onSuccess { generos -> _generosState.value = generos }
+        }
+    }
 
     fun cargarPerfil(usuarioId: Long) {
         viewModelScope.launch {
@@ -111,6 +137,21 @@ class UsuarioViewModel : ViewModel() {
         _updateState.value = UpdatePerfilState.Idle
     }
 
+    private val _tiendasState = MutableStateFlow<TiendasState>(TiendasState.Idle)
+    val tiendasState: StateFlow<TiendasState> = _tiendasState
+
+    fun cargarTiendas() {
+        viewModelScope.launch {
+            _tiendasState.value = TiendasState.Loading
+            val result = tiendaRepository.getAllTiendas()
+            result.onSuccess { tiendas ->
+                _tiendasState.value = TiendasState.Success(tiendas)
+            }.onFailure { error ->
+                _tiendasState.value = TiendasState.Error(error.message ?: "Error al cargar tiendas")
+            }
+        }
+    }
+
     fun cargarProductos(tiendaId: Long? = null) {
         viewModelScope.launch {
             _productosState.value = ProductosState.Loading
@@ -154,4 +195,11 @@ sealed class UpdatePerfilState {
     object Loading : UpdatePerfilState()
     data class Success(val usuario: UsuarioResponseDTO) : UpdatePerfilState()
     data class Error(val message: String) : UpdatePerfilState()
+}
+
+sealed class TiendasState {
+    object Idle : TiendasState()
+    object Loading : TiendasState()
+    data class Success(val tiendas: List<TiendaResponseDTO>) : TiendasState()
+    data class Error(val message: String) : TiendasState()
 }

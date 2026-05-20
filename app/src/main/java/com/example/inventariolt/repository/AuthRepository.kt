@@ -61,7 +61,7 @@ class AuthRepository {
         correo: String,
         password: String,
         codigo: String,
-        tiendaId: Long? = 1L,
+        tiendaId: Long? = null,
         imageUri: Uri? = null
     ): Result<UsuarioResponseDTO> {
         return try {

@@ -1,8 +1,8 @@
 package com.example.inventariolt.repository
 
 import com.example.inventariolt.interfaces.RetrofitClient
-import com.example.inventariolt.model.inventario.ProductoRequestDTO
-import com.example.inventariolt.model.inventario.ProductoResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ProductoRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.ProductoResponseDTO
 
 class ProductoRepository {
 

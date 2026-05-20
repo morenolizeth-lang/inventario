@@ -1,7 +1,7 @@
 package com.example.inventariolt.repository
 
 import com.example.inventariolt.interfaces.RetrofitClient
-import com.example.inventariolt.model.inventario.ColorResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ColorResponseDTO
 
 class ColorRepository {
     suspend fun getAllColores(): Result<List<ColorResponseDTO>> {

@@ -37,8 +37,6 @@ import com.example.inventariolt.viewModel.AuthViewModel
 import com.example.inventariolt.viewModel.RegisterState
 import com.example.inventariolt.viewModel.SendCodeState
 import com.example.inventariolt.viewModel.VerifyCodeState
-import com.example.inventariolt.viewModel.TiendaViewModel
-import com.example.inventariolt.viewModel.GetAllTiendasState
 import com.example.inventariolt.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,8 +83,7 @@ fun isValidPassword(password: String): Pair<Boolean, String> {
 @Composable
 fun RegistroScreen(
     navController: NavController,
-    authViewModel: AuthViewModel = viewModel(),
-    tiendaViewModel: TiendaViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel()
 ) {
     var currentStep by remember { mutableStateOf(1) }
     var email by remember { mutableStateOf("") }
@@ -100,8 +97,6 @@ fun RegistroScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
-    var selectedTiendaId by remember { mutableStateOf<Long?>(null) }
-    var selectedTiendaNombre by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -110,15 +105,7 @@ fun RegistroScreen(
     val sendCodeState by authViewModel.sendCodeState.collectAsState()
     val verifyCodeState by authViewModel.verifyCodeState.collectAsState()
     val registerState by authViewModel.registerState.collectAsState()
-    val tiendasState by tiendaViewModel.getAllState.collectAsState()
     val context = LocalContext.current
-
-    // Cargar tiendas al llegar al paso 3
-    LaunchedEffect(currentStep) {
-        if (currentStep == 3) {
-            tiendaViewModel.getAllTiendas()
-        }
-    }
 
     // Lista de dominios válidos
     val validDomains = setOf(
@@ -216,8 +203,6 @@ fun RegistroScreen(
                     codeError = null
                     timeLeft = 300  // Resetear timer por si acaso
                     canResend = false
-                    // Limpiar el código guardado
-                    // verificationCode = ""
                 } else if (error.contains("inválido") == true || error.contains("incorrecto") == true) {
                     inputCode = ""
                 }
@@ -238,12 +223,12 @@ fun RegistroScreen(
                     popUpTo("registro") { inclusive = true }
                 }
             }
-        is RegisterState.Error -> {
-            val error = (registerState as RegisterState.Error).message
-            scope.launch { snackbarHostState.showSnackbar("❌ Error: $error") }
+            is RegisterState.Error -> {
+                val error = (registerState as RegisterState.Error).message
+                scope.launch { snackbarHostState.showSnackbar("❌ Error: $error") }
+            }
+            else -> {}
         }
-        else -> {}
-    }
     }
 // Timer 1: Para habilitar el botón de reenviar código (60 segundos)
     LaunchedEffect(currentStep, timeLeft) {
@@ -371,22 +356,12 @@ fun RegistroScreen(
                             onConfirmPasswordVisibilityChange = { isConfirmPasswordVisible = it },
                             isRegistering = registerState is RegisterState.Loading,
                             registerError = (registerState as? RegisterState.Error)?.message,
-                            selectedTiendaId = selectedTiendaId,
-                            onTiendaSelected = { id, nombreTienda ->
-                                selectedTiendaId = id
-                                selectedTiendaNombre = nombreTienda
-                            },
-                            tiendasState = tiendasState,
                             selectedImageUri = selectedImageUri,
                             onImageSelected = { selectedImageUri = it },
                             onRegister = {
                                 when {
                                     nombre.isBlank() -> {
                                         scope.launch { snackbarHostState.showSnackbar("Por favor ingrese su nombre completo") }
-                                        return@Paso3RegistroCompleto
-                                    }
-                                    selectedTiendaId == null -> {
-                                        scope.launch { snackbarHostState.showSnackbar("Por favor seleccione una tienda") }
                                         return@Paso3RegistroCompleto
                                     }
                                     password.isBlank() -> {
@@ -426,7 +401,7 @@ fun RegistroScreen(
                                         return@Paso3RegistroCompleto
                                     }
                                 }
-                                authViewModel.register(context, nombre, email, password, inputCode, selectedTiendaId, selectedImageUri)
+                                authViewModel.register(context, nombre, email, password, inputCode, null, selectedImageUri)
                             }
                         )
                     }
@@ -598,51 +573,14 @@ fun Paso3RegistroCompleto(
     onConfirmPasswordVisibilityChange: (Boolean) -> Unit,
     isRegistering: Boolean,
     registerError: String?,
-    selectedTiendaId: Long?,
-    onTiendaSelected: (Long, String) -> Unit,
-    tiendasState: GetAllTiendasState,
     selectedImageUri: Uri?,
     onImageSelected: (Uri) -> Unit,
     onRegister: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var showErrorDialog by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { onImageSelected(it) }
-    }
-
-    val tiendas = when (tiendasState) {
-        is GetAllTiendasState.Success -> tiendasState.tiendas
-        else -> emptyList()
-    }
-    val isLoading = tiendasState is GetAllTiendasState.Loading
-    val isError = tiendasState is GetAllTiendasState.Error
-    val errorMessageState = (tiendasState as? GetAllTiendasState.Error)?.message ?: ""
-
-    LaunchedEffect(tiendasState) {
-        when (tiendasState) {
-            is GetAllTiendasState.Success -> {
-                println("🔍 DEBUG Paso3: Tiendas cargadas - ${tiendasState.tiendas.size}")
-            }
-            is GetAllTiendasState.Error -> {
-                errorMessage = tiendasState.message
-                showErrorDialog = true
-            }
-            else -> {}
-        }
-    }
-
-    if (showErrorDialog) {
-        AlertDialog(
-            onDismissRequest = { showErrorDialog = false },
-            title = { Text("Error al cargar tiendas") },
-            text = { Text(errorMessage) },
-            confirmButton = { TextButton(onClick = { showErrorDialog = false }) { Text("Aceptar") } }
-        )
     }
 
     // Envolver todo en un Column con verticalScroll
@@ -701,7 +639,7 @@ fun Paso3RegistroCompleto(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text("COMPLETAR REGISTRO", style = MaterialTheme.typography.headlineSmall, color = AquamarineDark, fontWeight = FontWeight.Bold)
-        Text("Selecciona tu tienda y completa tus datos", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF666666), textAlign = TextAlign.Center)
+        Text("Completa tus datos para finalizar el registro", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF666666), textAlign = TextAlign.Center)
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -722,65 +660,6 @@ fun Paso3RegistroCompleto(
                 }
             }
         }
-
-        // Selector de Tienda (Dropdown)
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
-            val selectedTiendaText = when {
-                isLoading -> "Cargando tiendas..."
-                isError -> "Error al cargar tiendas"
-                tiendas.isNotEmpty() -> tiendas.find { it.idTienda == selectedTiendaId }?.nombre ?: "Seleccionar Tienda"
-                else -> "Seleccionar Tienda"
-            }
-
-            OutlinedTextField(value = selectedTiendaText, onValueChange = {}, readOnly = true, label = { Text("Tienda") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                leadingIcon = { Icon(Icons.Default.Store, contentDescription = null, tint = AquamarineDark) },
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AquamarinePrimary, unfocusedBorderColor = Color(0xFFBDBDBD)),
-                isError = isError)
-
-            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                when {
-                    isLoading -> {
-                        DropdownMenuItem(text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Cargando tiendas...")
-                            }
-                        }, onClick = {}, enabled = false)
-                    }
-                    isError -> {
-                        DropdownMenuItem(text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Error, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Error: $errorMessageState")
-                            }
-                        }, onClick = { expanded = false })
-                    }
-                    tiendas.isEmpty() -> {
-                        DropdownMenuItem(text = { Text("No hay tiendas disponibles") }, onClick = { expanded = false }, enabled = false)
-                    }
-                    else -> {
-                        tiendas.forEach { tienda ->
-                            DropdownMenuItem(text = {
-                                Column {
-                                    Text(tienda.nombre, fontWeight = FontWeight.Medium)
-                                    Text(tienda.direccion, fontSize = 10.sp, color = Color.Gray)
-                                }
-                            }, onClick = {
-                                println("🔍 DEBUG: Tienda seleccionada - ID: ${tienda.idTienda}, Nombre: ${tienda.nombre}")
-                                onTiendaSelected(tienda.idTienda, tienda.nombre)
-                                expanded = false
-                            })
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(value = nombre, onValueChange = onNombreChange, label = { Text("Nombre completo") },
             placeholder = { Text("Juan Pérez") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
@@ -828,7 +707,7 @@ fun Paso3RegistroCompleto(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(onClick = onRegister, modifier = Modifier.fillMaxWidth().height(56.dp),
-            enabled = !isRegistering && !isLoading && tiendas.isNotEmpty(),
+            enabled = !isRegistering,
             shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = AquamarinePrimary, contentColor = Color.White)) {
             if (isRegistering) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
             else Text("REGISTRARSE", fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)

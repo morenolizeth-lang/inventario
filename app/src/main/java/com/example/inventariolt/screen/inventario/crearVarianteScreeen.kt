@@ -28,14 +28,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.inventariolt.model.inventario.ModeloResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.ModeloResponseDTO
 import com.example.inventariolt.ui.theme.*
 import com.example.inventariolt.viewModel.AgregarProductoViewModel
 import com.example.inventariolt.viewModel.ColoresState
 import com.example.inventariolt.viewModel.CrearVarianteState
 import com.example.inventariolt.viewModel.ModelosState
 import com.example.inventariolt.viewModel.SubirImagenState
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -734,7 +733,7 @@ fun ModeloCard(
 
 @Composable
 fun ColorItemCard(
-    color: com.example.inventariolt.model.inventario.ColorResponseDTO,
+    color: com.example.inventariolt.model.inventario_Empleado.ColorResponseDTO,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {

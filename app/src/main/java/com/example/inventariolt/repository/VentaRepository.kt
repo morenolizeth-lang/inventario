@@ -1,8 +1,8 @@
 package com.example.inventariolt.repository
 
 import com.example.inventariolt.interfaces.RetrofitClient
-import com.example.inventariolt.model.inventario.VentaRequestDTO
-import com.example.inventariolt.model.inventario.VentaResponseDTO
+import com.example.inventariolt.model.inventario_Empleado.VentaRequestDTO
+import com.example.inventariolt.model.inventario_Empleado.VentaResponseDTO
 
 class VentaRepository {
     suspend fun createVenta(request: VentaRequestDTO): Result<VentaResponseDTO> {

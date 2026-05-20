@@ -162,6 +162,19 @@ fun PerfilScreen(
                         textAlign = TextAlign.Center
                     )
 
+                    if (usuario != null) {
+                        Text(
+                            text = when (usuario.rol) {
+                                "CONSULTA" -> "EMPLEADO"
+                                "EMPLEADO" -> "ADMIN TIENDA"
+                                else -> usuario.rol
+                            },
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
                     Text(
                         text = usuario?.correo ?: "",
                         color = Color.White.copy(alpha = 0.8f),
@@ -191,7 +204,7 @@ fun PerfilScreen(
                     onClick = {
                         scope.launch {
                             drawerState.close()
-                            navController.navigate("lista_variantes")
+                            navController.navigate("lista_variantes/$userId")
                         }
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -204,7 +217,7 @@ fun PerfilScreen(
                     onClick = {
                         scope.launch {
                             drawerState.close()
-                            navController.navigate("lista_modelos")
+                            navController.navigate("lista_modelos/$userId")
                         }
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -294,7 +307,13 @@ fun PerfilScreen(
                         label = { Text("Inicio") },
                         selected = false,
                         onClick = {
-                            navController.navigate("inventario_home/$userId") {
+                            val usuario = (perfilState as? PerfilState.Success)?.usuario
+                            val destination = if (usuario?.rol == "CONSULTA") {
+                                "inventario_consulta/$userId"
+                            } else {
+                                "inventario_home/$userId"
+                            }
+                            navController.navigate(destination) {
                                 popUpTo("perfil/$userId") { inclusive = true }
                             }
                         }
@@ -460,7 +479,11 @@ fun PerfilScreen(
                                 InfoCard(
                                     icon = Icons.Default.Badge,
                                     label = "Rol",
-                                    value = usuario.rol
+                                    value = when (usuario.rol) {
+                                        "CONSULTA" -> "EMPLEADO"
+                                        "EMPLEADO" -> "ADMIN TIENDA"
+                                        else -> usuario.rol
+                                    }
                                 )
 
                                 Spacer(modifier = Modifier.height(24.dp))
