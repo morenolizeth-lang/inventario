@@ -21,7 +21,10 @@ class VentaViewModel : ViewModel() {
     private val _ventaState = MutableStateFlow<OperacionState>(OperacionState.Idle)
     val ventaState: StateFlow<OperacionState> = _ventaState
 
+    private var currentTiendaId: Long? = null
+
     fun cargarProductos(tiendaId: Long? = null) {
+        currentTiendaId = tiendaId
         viewModelScope.launch {
             _productosState.value = VentaProductosState.Loading
             val result = if (tiendaId != null) {
@@ -54,7 +57,7 @@ class VentaViewModel : ViewModel() {
             )
             ventaRepository.createVenta(request).onSuccess {
                 _ventaState.value = OperacionState.Success("Venta realizada con éxito")
-                cargarProductos() // Recargar para ver el stock actualizado
+                cargarProductos(currentTiendaId) // Mantener el contexto de la tienda
             }.onFailure {
                 _ventaState.value = OperacionState.Error(it.message ?: "Error al realizar la venta")
             }

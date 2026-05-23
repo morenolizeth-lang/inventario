@@ -1,10 +1,11 @@
 package com.example.inventariolt.screen.perfil
 
+import android.content.Intent
 import android.net.Uri
-import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,7 +21,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -40,8 +40,6 @@ import com.example.inventariolt.ui.theme.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import java.io.File
-import java.io.FileOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +62,8 @@ fun ActualizarPerfilScreen(
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
     var cambiarPassword by remember { mutableStateOf(false) }
     var imageUri by remember { mutableStateOf<Uri?>(null) } // Nuevo estado para la imagen seleccionada
+    var showSolicitudDialog by remember { mutableStateOf(false) }
+    var mensajeSolicitud by remember { mutableStateOf("") }
 
     // Cargar datos iniciales
     LaunchedEffect(userId) {
@@ -84,25 +84,80 @@ fun ActualizarPerfilScreen(
         when (updateState) {
             is UpdatePerfilState.Success -> {
                 Toast.makeText(context, "Perfil actualizado con éxito", Toast.LENGTH_SHORT).show()
-                // Actualizar contraseña guardada si se cambió
                 if (cambiarPassword && password.isNotEmpty()) {
                     prefs.edit().putString("user_password", password).apply()
                 }
                 viewModel.resetUpdateState()
                 navController.popBackStack()
             }
-
             is UpdatePerfilState.Error -> {
-                Toast.makeText(
-                    context,
-                    (updateState as UpdatePerfilState.Error).message,
-                    Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(context, (updateState as UpdatePerfilState.Error).message, Toast.LENGTH_LONG).show()
                 viewModel.resetUpdateState()
             }
-
             else -> {}
         }
+    }
+
+    if (showSolicitudDialog && perfilState is PerfilState.Success) {
+        val usuario = (perfilState as PerfilState.Success).usuario
+        AlertDialog(
+            onDismissRequest = { showSolicitudDialog = false },
+            title = { Text("Solicitar cambio a Administrador", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Explica brevemente por qué solicitas el cambio de rol. Se abrirá tu aplicación de correo para enviar la solicitud.")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = mensajeSolicitud,
+                        onValueChange = { mensajeSolicitud = it },
+                        label = { Text("Motivo de la solicitud") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (mensajeSolicitud.isNotBlank()) {
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:")
+                                putExtra(Intent.EXTRA_EMAIL, arrayOf("admin_inventario@empresa.com")) // Cambia por el correo real
+                                putExtra(Intent.EXTRA_SUBJECT, "Solicitud de Cambio de Rol - ${usuario.nombre}")
+                                putExtra(Intent.EXTRA_TEXT, """
+                                    SOLICITUD DE CAMBIO DE ROL
+                                    
+                                    Usuario: ${usuario.nombre}
+                                    ID: $userId
+                                    Correo: ${usuario.correo}
+                                    Rol Actual: ${usuario.rol}
+                                    
+                                    Motivo de la solicitud:
+                                    $mensajeSolicitud
+                                    
+                                    Enviado desde InventarioLT App.
+                                """.trimIndent())
+                            }
+                            try {
+                                context.startActivity(Intent.createChooser(intent, "Enviar solicitud por:"))
+                                showSolicitudDialog = false
+                                mensajeSolicitud = ""
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "No tienes aplicaciones de correo configuradas", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "Por favor, ingresa un motivo", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AquamarinePrimary)
+                ) {
+                    Text("Enviar Solicitud")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSolicitudDialog = false }) { Text("Cancelar") }
+            }
+        )
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -435,6 +490,27 @@ fun ActualizarPerfilScreen(
                                 } else {
                                     Text(
                                         "Guardar Cambios",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            // Botón para solicitar cambio de rol (Solo para CONSULTA)
+                            if (usuario.rol == "CONSULTA") {
+                                OutlinedButton(
+                                    onClick = { showSolicitudDialog = true },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, AquamarinePrimary),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AquamarinePrimary)
+                                ) {
+                                    Icon(Icons.Default.Upgrade, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "Solicitar ser Administrador",
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold
                                     )

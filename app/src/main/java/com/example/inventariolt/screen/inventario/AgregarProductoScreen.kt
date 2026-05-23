@@ -1,6 +1,7 @@
 package com.example.inventariolt.screen.inventario
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -56,6 +57,13 @@ fun AgregarProductoScreen(
     var precioCompra by remember { mutableStateOf("") }
     var precioVenta by remember { mutableStateOf("") }
     var varianteSeleccionada by remember { mutableStateOf<VarianteVisualResponseDTO?>(null) }
+
+    // Estados de error para validación
+    var varianteError by remember { mutableStateOf(false) }
+    var tallaError by remember { mutableStateOf(false) }
+    var stockError by remember { mutableStateOf(false) }
+    var precioCompraError by remember { mutableStateOf(false) }
+    var precioVentaError by remember { mutableStateOf(false) }
 
     val variantesConModeloState by viewModel.variantesConModeloState.collectAsState()
     val crearProductoState by viewModel.crearProductoState.collectAsState()
@@ -174,7 +182,7 @@ fun AgregarProductoScreen(
                     icon = { Icon(Icons.Default.Style, contentDescription = "Variantes") },
                     label = { Text("Variantes", fontWeight = FontWeight.Medium) },
                     selected = false,
-                    onClick = { scope.launch { drawerState.close(); navController.navigate("lista_variantes") } },
+                    onClick = { scope.launch { drawerState.close(); navController.navigate("lista_variantes/$userId") } },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 // En InventarioHomeScreen, dentro del ModalDrawerSheet, después de NavigationDrawerItem de Variantes
@@ -185,7 +193,7 @@ fun AgregarProductoScreen(
                     onClick = {
                         scope.launch {
                             drawerState.close()
-                            navController.navigate("lista_modelos")
+                            navController.navigate("lista_modelos/$userId")
                         }
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -284,7 +292,8 @@ fun AgregarProductoScreen(
                             onClick = { expanded = !expanded },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AquamarinePrimary)
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AquamarinePrimary),
+                            border = if (varianteError) BorderStroke(2.dp, Color.Red) else ButtonDefaults.outlinedButtonBorder
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -342,6 +351,7 @@ fun AgregarProductoScreen(
                                                         onClick = {
                                                             varianteSeleccionadaId = item.variante.idVarianteVisual
                                                             varianteSeleccionada = item.variante
+                                                            varianteError = false
                                                             expanded = false
                                                         }
                                                     )
@@ -392,17 +402,75 @@ fun AgregarProductoScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Información del Producto", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AquamarinePrimary)
-                        OutlinedTextField(value = talla, onValueChange = { talla = it }, label = { Text("Talla") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.Straighten, contentDescription = null) })
-                        OutlinedTextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.Inventory, contentDescription = null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                        OutlinedTextField(value = precioCompra, onValueChange = { precioCompra = it }, label = { Text("Precio de Compra") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                        OutlinedTextField(value = precioVenta, onValueChange = { precioVenta = it }, label = { Text("Precio de Venta") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                        
+                        OutlinedTextField(
+                            value = talla,
+                            onValueChange = { 
+                                talla = it
+                                tallaError = it.isBlank()
+                            },
+                            label = { Text("Talla *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            isError = tallaError,
+                            leadingIcon = { Icon(Icons.Default.Straighten, contentDescription = null, tint = if(tallaError) Color.Red else AquamarinePrimary) }
+                        )
+
+                        OutlinedTextField(
+                            value = stock,
+                            onValueChange = { 
+                                stock = it
+                                stockError = it.isBlank()
+                            },
+                            label = { Text("Stock *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            isError = stockError,
+                            leadingIcon = { Icon(Icons.Default.Inventory, contentDescription = null, tint = if(stockError) Color.Red else AquamarinePrimary) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+
+                        OutlinedTextField(
+                            value = precioCompra,
+                            onValueChange = { 
+                                precioCompra = it
+                                precioCompraError = it.isBlank()
+                            },
+                            label = { Text("Precio de Compra *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            isError = precioCompraError,
+                            leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null, tint = if(precioCompraError) Color.Red else AquamarinePrimary) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+
+                        OutlinedTextField(
+                            value = precioVenta,
+                            onValueChange = { 
+                                precioVenta = it
+                                precioVentaError = it.isBlank()
+                            },
+                            label = { Text("Precio de Venta *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            isError = precioVentaError,
+                            leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null, tint = if(precioVentaError) Color.Red else AquamarinePrimary) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        if (varianteSeleccionada != null && talla.isNotBlank() && stock.isNotBlank() && precioCompra.isNotBlank() && precioVenta.isNotBlank()) {
+                        // Validar todos los campos antes de enviar
+                        varianteError = varianteSeleccionada == null
+                        tallaError = talla.isBlank()
+                        stockError = stock.isBlank()
+                        precioCompraError = precioCompra.isBlank()
+                        precioVentaError = precioVenta.isBlank()
+
+                        if (!varianteError && !tallaError && !stockError && !precioCompraError && !precioVentaError) {
                             viewModel.crearProducto(
                                 varianteVisualId = varianteSeleccionada!!.idVarianteVisual,
                                 tiendaId = tiendaId,
@@ -412,7 +480,7 @@ fun AgregarProductoScreen(
                                 talla = talla
                             )
                         } else {
-                            Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Por favor complete los campos marcados en rojo", Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),

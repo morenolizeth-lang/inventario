@@ -1,5 +1,7 @@
 package com.example.inventariolt.screen.inventario
 
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -42,11 +45,16 @@ fun GenerarVentaScreen(
     val ventaState by viewModel.ventaState.collectAsState()
     val usuarioViewModel: UsuarioViewModel = viewModel()
     val perfilState by usuarioViewModel.perfilState.collectAsState()
+    val context = LocalContext.current
 
     var selectedProducto by remember { mutableStateOf<ProductoResponseDTO?>(null) }
     var cantidad by remember { mutableStateOf("1") }
     var expanded by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+
+    // Estados de error para validación
+    var productoError by remember { mutableStateOf(false) }
+    var cantidadError by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         usuarioViewModel.cargarPerfil(userId)
@@ -125,7 +133,8 @@ fun GenerarVentaScreen(
                         onClick = { expanded = !expanded },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AquamarineDark)
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AquamarineDark),
+                        border = if (productoError) BorderStroke(2.dp, Color.Red) else ButtonDefaults.outlinedButtonBorder
                     ) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -149,7 +158,11 @@ fun GenerarVentaScreen(
                                             ProductoCard(
                                                 producto = producto,
                                                 isSelected = selectedProducto?.idProducto == producto.idProducto,
-                                                onClick = { selectedProducto = producto; expanded = false }
+                                                onClick = { 
+                                                    selectedProducto = producto
+                                                    productoError = false
+                                                    expanded = false 
+                                                }
                                             )
                                         }
                                     }
@@ -181,11 +194,24 @@ fun GenerarVentaScreen(
 
             OutlinedTextField(
                 value = cantidad,
-                onValueChange = { if (it.all { c -> c.isDigit() }) cantidad = it },
+                onValueChange = { 
+                    if (it.all { c -> c.isDigit() }) {
+                        cantidad = it
+                        cantidadError = it.isBlank() || (it.toIntOrNull() ?: 0) <= 0 || (it.toIntOrNull() ?: 0) > (selectedProducto?.stock ?: 0)
+                    }
+                },
                 label = { Text("Cantidad") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 shape = RoundedCornerShape(12.dp),
+                isError = cantidadError,
+                leadingIcon = { 
+                    Icon(
+                        Icons.Default.ConfirmationNumber, 
+                        contentDescription = null,
+                        tint = if (cantidadError) Color.Red else AquamarinePrimary
+                    ) 
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AquamarinePrimary,
                     focusedLabelColor = AquamarinePrimary
@@ -206,12 +232,20 @@ fun GenerarVentaScreen(
 
             Button(
                 onClick = {
-                    selectedProducto?.let {
-                        viewModel.realizarVenta(it.idProducto, userId, cantidad.toIntOrNull() ?: 0, it.precioVenta)
+                    productoError = selectedProducto == null
+                    val cantInt = cantidad.toIntOrNull() ?: 0
+                    cantidadError = cantInt <= 0 || cantInt > (selectedProducto?.stock ?: 0)
+
+                    if (!productoError && !cantidadError) {
+                        selectedProducto?.let {
+                            viewModel.realizarVenta(it.idProducto, userId, cantInt, it.precioVenta)
+                        }
+                    } else {
+                        Toast.makeText(context, "Verifique los campos marcados en rojo", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = selectedProducto != null && (cantidad.toIntOrNull() ?: 0) > 0 && (cantidad.toIntOrNull() ?: 0) <= (selectedProducto?.stock ?: 0) && ventaState !is OperacionState.Loading,
+                enabled = ventaState !is OperacionState.Loading,
                 colors = ButtonDefaults.buttonColors(containerColor = AquamarinePrimary)
             ) {
                 if (ventaState is OperacionState.Loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))

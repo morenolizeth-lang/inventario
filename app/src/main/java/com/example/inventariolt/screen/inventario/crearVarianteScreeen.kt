@@ -4,6 +4,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -53,6 +54,7 @@ fun CrearVarianteScreen(
     var nuevoColorSecundarioId by remember { mutableStateOf<Long?>(null) }
     var imagenSeleccionadaUri by remember { mutableStateOf<Uri?>(null) }
     var varianteCreadaId by remember { mutableStateOf<Long?>(null) }
+    var attemptedSubmit by remember { mutableStateOf(false) }
 
     // Estados de expansión para colores
     var expandedColorPrimario by remember { mutableStateOf(false) }
@@ -169,7 +171,12 @@ fun CrearVarianteScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = AquamarinePrimary
-                        )
+                        ),
+                        border = if (attemptedSubmit && modeloSeleccionadoId == null) {
+                            BorderStroke(2.dp, Color.Red)
+                        } else {
+                            ButtonDefaults.outlinedButtonBorder
+                        }
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -328,7 +335,12 @@ fun CrearVarianteScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = AquamarinePrimary
-                        )
+                        ),
+                        border = if (attemptedSubmit && nuevoColorPrimarioId == null) {
+                            BorderStroke(2.dp, Color.Red)
+                        } else {
+                            ButtonDefaults.outlinedButtonBorder
+                        }
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -625,6 +637,7 @@ fun CrearVarianteScreen(
 
             Button(
                 onClick = {
+                    attemptedSubmit = true
                     if (modeloSeleccionadoId != null && nuevoColorPrimarioId != null) {
                         viewModel.crearVariante(
                             modeloId = modeloSeleccionadoId!!,

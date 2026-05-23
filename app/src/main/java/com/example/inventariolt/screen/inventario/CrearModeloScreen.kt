@@ -1,6 +1,7 @@
 package com.example.inventariolt.screen.inventario
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -43,6 +44,12 @@ fun CrearModeloScreen(
     var marcaId by remember { mutableStateOf<Long?>(null) }
     var categoriaId by remember { mutableStateOf<Long?>(null) }
     var generoId by remember { mutableStateOf<Long?>(null) }
+
+    // Estados de error para validación
+    var nombreModeloError by remember { mutableStateOf(false) }
+    var marcaError by remember { mutableStateOf(false) }
+    var categoriaError by remember { mutableStateOf(false) }
+    var generoError by remember { mutableStateOf(false) }
 
     // Estados de expansión
     var expandedMarca by remember { mutableStateOf(false) }
@@ -126,12 +133,22 @@ fun CrearModeloScreen(
                     // Nombre del modelo
                     OutlinedTextField(
                         value = nombreModelo,
-                        onValueChange = { nombreModelo = it },
+                        onValueChange = { 
+                            nombreModelo = it
+                            nombreModeloError = it.isBlank()
+                        },
                         label = { Text("Nombre del Modelo *") },
                         placeholder = { Text("Ej: Air Max, Classic, Running Pro") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        leadingIcon = { Icon(Icons.Default.Style, contentDescription = null) },
+                        isError = nombreModeloError,
+                        leadingIcon = { 
+                            Icon(
+                                Icons.Default.Style, 
+                                contentDescription = null,
+                                tint = if (nombreModeloError) Color.Red else AquamarinePrimary
+                            ) 
+                        },
                         singleLine = true
                     )
                 }
@@ -162,7 +179,8 @@ fun CrearModeloScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = AquamarinePrimary
-                        )
+                        ),
+                        border = if (marcaError) BorderStroke(2.dp, Color.Red) else ButtonDefaults.outlinedButtonBorder
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -232,6 +250,7 @@ fun CrearModeloScreen(
                                                     isSelected = marcaId == marca.idMarca,
                                                     onClick = {
                                                         marcaId = marca.idMarca
+                                                        marcaError = false
                                                         expandedMarca = false
                                                     }
                                                 )
@@ -298,7 +317,8 @@ fun CrearModeloScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = AquamarinePrimary
-                        )
+                        ),
+                        border = if (categoriaError) BorderStroke(2.dp, Color.Red) else ButtonDefaults.outlinedButtonBorder
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -368,6 +388,7 @@ fun CrearModeloScreen(
                                                     isSelected = categoriaId == categoria.idCategoria,
                                                     onClick = {
                                                         categoriaId = categoria.idCategoria
+                                                        categoriaError = false
                                                         expandedCategoria = false
                                                     }
                                                 )
@@ -434,7 +455,8 @@ fun CrearModeloScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = AquamarinePrimary
-                        )
+                        ),
+                        border = if (generoError) BorderStroke(2.dp, Color.Red) else ButtonDefaults.outlinedButtonBorder
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -504,6 +526,7 @@ fun CrearModeloScreen(
                                                     isSelected = generoId == genero.idGenero,
                                                     onClick = {
                                                         generoId = genero.idGenero
+                                                        generoError = false
                                                         expandedGenero = false
                                                     }
                                                 )
@@ -549,19 +572,21 @@ fun CrearModeloScreen(
 
             Button(
                 onClick = {
-                    when {
-                        nombreModelo.isBlank() -> Toast.makeText(context, "Ingresa el nombre del modelo", Toast.LENGTH_SHORT).show()
-                        marcaId == null -> Toast.makeText(context, "Selecciona una marca", Toast.LENGTH_SHORT).show()
-                        categoriaId == null -> Toast.makeText(context, "Selecciona una categoría", Toast.LENGTH_SHORT).show()
-                        generoId == null -> Toast.makeText(context, "Selecciona un género", Toast.LENGTH_SHORT).show()
-                        else -> {
-                            viewModel.crearModelo(
-                                nombre = nombreModelo,
-                                marcaId = marcaId!!,
-                                categoriaId = categoriaId!!,
-                                generoId = generoId!!
-                            )
-                        }
+                    // Validar todos los campos
+                    nombreModeloError = nombreModelo.isBlank()
+                    marcaError = marcaId == null
+                    categoriaError = categoriaId == null
+                    generoError = generoId == null
+
+                    if (!nombreModeloError && !marcaError && !categoriaError && !generoError) {
+                        viewModel.crearModelo(
+                            nombre = nombreModelo,
+                            marcaId = marcaId!!,
+                            categoriaId = categoriaId!!,
+                            generoId = generoId!!
+                        )
+                    } else {
+                        Toast.makeText(context, "Por favor complete los campos marcados en rojo", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
