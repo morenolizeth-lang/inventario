@@ -122,7 +122,7 @@ fun ActualizarPerfilScreen(
                         if (mensajeSolicitud.isNotBlank()) {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
                                 data = Uri.parse("mailto:")
-                                putExtra(Intent.EXTRA_EMAIL, arrayOf("admin_inventario@empresa.com")) // Cambia por el correo real
+                                putExtra(Intent.EXTRA_EMAIL, arrayOf("administrador@gmail.com")) // Cambia por el correo real
                                 putExtra(Intent.EXTRA_SUBJECT, "Solicitud de Cambio de Rol - ${usuario.nombre}")
                                 putExtra(Intent.EXTRA_TEXT, """
                                     SOLICITUD DE CAMBIO DE ROL

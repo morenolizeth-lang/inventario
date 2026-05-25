@@ -197,57 +197,59 @@ fun PerfilScreen(
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
 
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Style, contentDescription = "Variantes") },
-                    label = { Text("Variantes", fontWeight = FontWeight.Medium) },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate("lista_variantes/$userId")
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-                // En InventarioHomeScreen, dentro del ModalDrawerSheet, después de NavigationDrawerItem de Variantes
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Inventory2, contentDescription = "Modelos") },
-                    label = { Text("Modelos", fontWeight = FontWeight.Medium) },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate("lista_modelos/$userId")
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
+                if (usuario?.rol == "EMPLEADO") {
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Style, contentDescription = "Variantes") },
+                        label = { Text("Variantes", fontWeight = FontWeight.Medium) },
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+                                drawerState.close()
+                                navController.navigate("lista_variantes/$userId")
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                    // En InventarioHomeScreen, dentro del ModalDrawerSheet, después de NavigationDrawerItem de Variantes
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Inventory2, contentDescription = "Modelos") },
+                        label = { Text("Modelos", fontWeight = FontWeight.Medium) },
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+                                drawerState.close()
+                                navController.navigate("lista_modelos/$userId")
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
 
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Ventas") },
-                    label = { Text("Generar Venta", fontWeight = FontWeight.Medium) },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate("generar_venta/$userId")
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Ventas") },
+                        label = { Text("Generar Venta", fontWeight = FontWeight.Medium) },
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+                                drawerState.close()
+                                navController.navigate("generar_venta/$userId")
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
 
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.BarChart, contentDescription = "Estadísticas") },
-                    label = { Text("Estadísticas", fontWeight = FontWeight.Medium) },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate("estadisticas/$userId")
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.BarChart, contentDescription = "Estadísticas") },
+                        label = { Text("Estadísticas", fontWeight = FontWeight.Medium) },
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+                                drawerState.close()
+                                navController.navigate("estadisticas/$userId")
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                }
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Outlined.Info, contentDescription = "Información") },
@@ -318,16 +320,31 @@ fun PerfilScreen(
                             }
                         }
                     )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Add, contentDescription = "Agregar") },
-                        label = { Text("Agregar") },
-                        selected = false,
-                        onClick = {
-                            val usuario = (perfilState as? PerfilState.Success)?.usuario
-                            val tiendaId = usuario?.tiendaId ?: 0L
-                            navController.navigate("agregar_producto/$tiendaId/$userId")
-                        }
-                    )
+
+                    val usuario = (perfilState as? PerfilState.Success)?.usuario
+                    if (usuario?.rol == "EMPLEADO") {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Add, contentDescription = "Agregar") },
+                            label = { Text("Agregar") },
+                            selected = false,
+                            onClick = {
+                                val tiendaId = usuario.tiendaId ?: 0L
+                                navController.navigate("agregar_producto/$tiendaId/$userId")
+                            }
+                        )
+                    } else {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Store, contentDescription = "Tienda") },
+                            label = { Text("Tienda") },
+                            selected = false,
+                            onClick = {
+                                // Redirigir a inicio consulta para que el diálogo de tienda se maneje allá o similar
+                                navController.navigate("inventario_consulta/$userId") {
+                                    popUpTo("perfil/$userId") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
                         label = { Text("Perfil") },
