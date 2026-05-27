@@ -3,10 +3,12 @@ package com.example.inventariolt.screen.inventario
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -36,6 +38,9 @@ import com.example.inventariolt.viewModel.PerfilState
 import com.example.inventariolt.viewModel.ProductosState
 import com.example.inventariolt.viewModel.UsuarioViewModel
 import com.example.inventariolt.ui.theme.*
+import com.example.inventariolt.screen.inventario_consulta.ActiveFilterChip
+import com.example.inventariolt.screen.inventario_consulta.MainFilterChip
+import com.example.inventariolt.screen.inventario_consulta.SubFilterRow
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 
@@ -50,9 +55,27 @@ fun InventarioHomeScreen(
     val perfilState by viewModel.perfilState.collectAsState()
     val productosState by viewModel.productosState.collectAsState()
 
+    // Estados para catálogos de filtros
+    val categorias by viewModel.categoriasState.collectAsState()
+    val marcas by viewModel.marcasState.collectAsState()
+    val generos by viewModel.generosState.collectAsState()
+    val modelos by viewModel.modelosState.collectAsState()
+
+    // Estados de filtros seleccionados
+    var selectedCategoria by remember { mutableStateOf<String?>(null) }
+    var selectedMarca by remember { mutableStateOf<String?>(null) }
+    var selectedGenero by remember { mutableStateOf<String?>(null) }
+    var selectedTalla by remember { mutableStateOf<String?>(null) }
+    var expandedFilter by remember { mutableStateOf<String?>(null) }
+    var sortByLowStock by remember { mutableStateOf(false) }
+    var sortByCheapest by remember { mutableStateOf(false) }
+
+    val tallasColombia = listOf("34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "6", "8", "10", "12", "14", "16")
+
     // Cargar perfil y productos
     LaunchedEffect(userId) {
         viewModel.cargarPerfil(userId)
+        viewModel.cargarFiltros()
     }
 
     // Cargar productos cuando el perfil está listo
@@ -82,21 +105,69 @@ fun InventarioHomeScreen(
     var showInfoDialog by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    // Filtrar productos por búsqueda con protección extrema contra nulos
-    val filteredProducts = remember(productosState, searchText) {
+    // Filtrar productos por búsqueda y filtros
+    val filteredProducts = remember(productosState, searchText, selectedCategoria, selectedMarca, selectedGenero, selectedTalla, sortByLowStock, sortByCheapest, modelos) {
         when (productosState) {
             is ProductosState.Success -> {
-                val productos = (productosState as ProductosState.Success).productos
+                var productos = (productosState as ProductosState.Success).productos
                 val query = searchText.trim()
-                if (query.isEmpty()) {
-                    productos
-                } else {
-                    productos.filter {
+
+                // Filtro por búsqueda inteligente (Cruce con metadatos de modelos)
+                if (query.isNotEmpty()) {
+                    val modelsMatchingMetadata = modelos.filter {
+                        it.generoNombre.trim().contains(query, ignoreCase = true) ||
+                        it.categoriaNombre.trim().contains(query, ignoreCase = true) ||
+                        it.marcaNombre.trim().contains(query, ignoreCase = true) ||
+                        it.nombre.trim().contains(query, ignoreCase = true)
+                    }.map { it.idModelo }.toSet()
+
+                    // 2. Filtrar productos por campos directos O por pertenencia a modelos encontrados
+                    productos = productos.filter {
                         (it.modeloNombre?.contains(query, ignoreCase = true) == true) ||
-                                (it.talla?.contains(query, ignoreCase = true) == true) ||
-                                (it.marcaNombre?.contains(query, ignoreCase = true) == true)
+                        (it.talla?.contains(query, ignoreCase = true) == true) ||
+                        (it.marcaNombre?.contains(query, ignoreCase = true) == true) ||
+                        (it.colorPrimarioNombre?.contains(query, ignoreCase = true) == true) ||
+                        (it.colorSecundarioNombre?.contains(query, ignoreCase = true) == true) ||
+                        (it.modeloId in modelsMatchingMetadata)
                     }
                 }
+
+                // Filtro por Categoría (Cruce robusto con modelos)
+                selectedCategoria?.let { cat ->
+                    val catModels = modelos.filter { it.categoriaNombre.trim().contains(cat.trim(), ignoreCase = true) }.map { it.idModelo }.toSet()
+                    productos = productos.filter { it.modeloId in catModels }
+                }
+
+                // Filtro por Marca (Doble validación: Producto + Modelo)
+                selectedMarca?.let { marca ->
+                    val brandModels = modelos.filter { it.marcaNombre.trim().contains(marca.trim(), ignoreCase = true) }.map { it.idModelo }.toSet()
+                    productos = productos.filter { 
+                        (it.marcaNombre?.trim()?.contains(marca.trim(), ignoreCase = true) == true) || 
+                        (it.modeloId in brandModels)
+                    }
+                }
+
+                // Filtro por Género (Cruce con modelos)
+                selectedGenero?.let { gen ->
+                    val genModels = modelos.filter { it.generoNombre.trim().contains(gen.trim(), ignoreCase = true) }.map { it.idModelo }.toSet()
+                    productos = productos.filter { it.modeloId in genModels }
+                }
+
+                // Filtro por Talla
+                selectedTalla?.let { talla ->
+                    productos = productos.filter { it.talla?.trim()?.contains(talla.trim(), ignoreCase = true) == true }
+                }
+
+                // Ordenamiento
+                if (sortByLowStock) {
+                    productos = productos.filter { it.stock <= 5 }.sortedBy { it.stock }
+                }
+
+                if (sortByCheapest) {
+                    productos = productos.sortedBy { it.precioVenta }
+                }
+
+                productos
             }
             else -> emptyList()
         }
@@ -449,7 +520,7 @@ fun InventarioHomeScreen(
                     OutlinedTextField(
                         value = searchText,
                         onValueChange = { searchText = it },
-                        placeholder = { Text("Buscar productos...") },
+                        placeholder = { Text("¿Qué estás buscando?") },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
                         trailingIcon = {
@@ -468,6 +539,142 @@ fun InventarioHomeScreen(
                             unfocusedBorderColor = Color.Transparent
                         )
                     )
+                }
+
+                // Categorías de Filtros (Chips principales)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MainFilterChip(
+                        label = "Categoría",
+                        isSelected = expandedFilter == "Categoría",
+                        hasValue = selectedCategoria != null,
+                        onClick = { expandedFilter = if (expandedFilter == "Categoría") null else "Categoría" }
+                    )
+                    MainFilterChip(
+                        label = "Marca",
+                        isSelected = expandedFilter == "Marca",
+                        hasValue = selectedMarca != null,
+                        onClick = { expandedFilter = if (expandedFilter == "Marca") null else "Marca" }
+                    )
+                    MainFilterChip(
+                        label = "Género",
+                        isSelected = expandedFilter == "Género",
+                        hasValue = selectedGenero != null,
+                        onClick = { expandedFilter = if (expandedFilter == "Género") null else "Género" }
+                    )
+                    MainFilterChip(
+                        label = "Talla",
+                        isSelected = expandedFilter == "Talla",
+                        hasValue = selectedTalla != null,
+                        onClick = { expandedFilter = if (expandedFilter == "Talla") null else "Talla" }
+                    )
+                    MainFilterChip(
+                        label = "Ordenar",
+                        isSelected = expandedFilter == "Ordenar",
+                        hasValue = sortByLowStock || sortByCheapest,
+                        onClick = { expandedFilter = if (expandedFilter == "Ordenar") null else "Ordenar" }
+                    )
+
+                    if (selectedCategoria != null || selectedMarca != null || selectedGenero != null || selectedTalla != null || sortByLowStock || sortByCheapest) {
+                        TextButton(
+                            onClick = {
+                                selectedCategoria = null
+                                selectedMarca = null
+                                selectedGenero = null
+                                selectedTalla = null
+                                sortByLowStock = false
+                                sortByCheapest = false
+                                expandedFilter = null
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
+                            Text("Limpiar", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                // Opciones expandidas
+                if (expandedFilter != null) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        color = Color.White.copy(alpha = 0.5f)
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                            when (expandedFilter) {
+                                "Categoría" -> {
+                                    SubFilterRow(categorias.map { it.nombre }, selectedCategoria) {
+                                        selectedCategoria = it
+                                        expandedFilter = null
+                                    }
+                                }
+                                "Marca" -> {
+                                    SubFilterRow(marcas.map { it.nombre }, selectedMarca) {
+                                        selectedMarca = it
+                                        expandedFilter = null
+                                    }
+                                }
+                                "Género" -> {
+                                    SubFilterRow(generos.map { it.nombre }, selectedGenero) {
+                                        selectedGenero = it
+                                        expandedFilter = null
+                                    }
+                                }
+                                "Talla" -> {
+                                    SubFilterRow(tallasColombia, selectedTalla) {
+                                        selectedTalla = it
+                                        expandedFilter = null
+                                    }
+                                }
+                                "Ordenar" -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        FilterChip(
+                                            selected = sortByLowStock,
+                                            onClick = { sortByLowStock = !sortByLowStock; expandedFilter = null },
+                                            label = { Text("Poco Stock") },
+                                            leadingIcon = { if (sortByLowStock) Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
+                                        )
+                                        FilterChip(
+                                            selected = sortByCheapest,
+                                            onClick = { sortByCheapest = !sortByCheapest; expandedFilter = null },
+                                            label = { Text("Más Económicos") },
+                                            leadingIcon = { if (sortByCheapest) Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Chips de filtros activos (compactos)
+                if (selectedCategoria != null || selectedMarca != null || selectedGenero != null || selectedTalla != null || sortByLowStock || sortByCheapest) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (selectedCategoria != null) ActiveFilterChip("Cat: $selectedCategoria") { selectedCategoria = null }
+                        if (selectedMarca != null) ActiveFilterChip("Marca: $selectedMarca") { selectedMarca = null }
+                        if (selectedGenero != null) ActiveFilterChip("Gen: $selectedGenero") { selectedGenero = null }
+                        if (selectedTalla != null) ActiveFilterChip("Talla: $selectedTalla") { selectedTalla = null }
+                        if (sortByLowStock) ActiveFilterChip("Poco Stock") { sortByLowStock = false }
+                        if (sortByCheapest) ActiveFilterChip("Económicos") { sortByCheapest = false }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
                 // Contador de productos

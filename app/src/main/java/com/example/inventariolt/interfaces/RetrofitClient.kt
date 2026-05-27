@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     private const val BASE_URL = "https://backent-tienda-de-zapatos.onrender.com/"
+   //private const val BASE_URL = "http://1192.168.20.36:8080/"
 
     private val gson = GsonBuilder()
         .registerTypeAdapter(LocalDateTime::class.java, JsonSerializer<LocalDateTime> { src, _, _ ->

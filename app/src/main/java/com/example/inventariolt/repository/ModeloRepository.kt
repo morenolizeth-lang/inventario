@@ -66,12 +66,14 @@ class ModeloRepository {
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                val errorBody = response.errorBody()?.string()
-                Result.failure(Exception("Error ${response.code()}: ${errorBody ?: "Error al eliminar"}"))
+                val errorMessage = if (response.code() == 500) {
+                    "No se puede borrar porque este modelo está en uso (tiene colores o productos asociados)"
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    "Error ${response.code()}: ${errorBody ?: "Error al eliminar"}"
+                }
+                Result.failure(Exception(errorMessage))
             }
-        } catch (e: retrofit2.HttpException) {
-            val errorBody = e.response()?.errorBody()?.string()
-            Result.failure(Exception("Error ${e.code()}: ${errorBody ?: e.message()}"))
         } catch (e: Exception) {
             Result.failure(Exception("Error de conexión: ${e.message}"))
         }

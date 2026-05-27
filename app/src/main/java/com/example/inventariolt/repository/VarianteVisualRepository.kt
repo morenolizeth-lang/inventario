@@ -58,7 +58,13 @@ class VarianteVisualRepository {
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Error al eliminar"))
+                val errorMessage = if (response.code() == 500) {
+                    "No se puede borrar porque esta variante está en uso (tiene stock o productos asociados)"
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    "Error ${response.code()}: ${errorBody ?: "Error al eliminar"}"
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -93,8 +93,13 @@ class ProductoRepository {
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                val errorBody = response.errorBody()?.string()
-                Result.failure(Exception("Error ${response.code()}: ${errorBody ?: "Error al eliminar el producto"}"))
+                val errorMessage = if (response.code() == 500) {
+                    "No se puede borrar porque el producto tiene ventas o registros vinculados"
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    "Error ${response.code()}: ${errorBody ?: "Error al eliminar el producto"}"
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             Result.failure(e)
